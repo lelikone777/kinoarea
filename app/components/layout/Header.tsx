@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
 import { CloseIcon, MenuIcon } from "../icons";
 
@@ -10,6 +10,7 @@ type HeaderProps = {
 
 export function Header({ navLinks }: HeaderProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const scrollPositionRef = useRef(0);
 
   const closeNav = () => setIsMobileNavOpen(false);
   const openNav = () => setIsMobileNavOpen(true);
@@ -25,13 +26,33 @@ export function Header({ navLinks }: HeaderProps) {
   }, []);
 
   useEffect(() => {
+    const body = document.body;
     if (isMobileNavOpen) {
-      document.body.style.overflow = "hidden";
+      scrollPositionRef.current = window.scrollY;
+      body.style.position = "fixed";
+      body.style.top = `-${scrollPositionRef.current}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+      body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      if (scrollPositionRef.current) {
+        window.scrollTo({ top: scrollPositionRef.current, behavior: "instant" as ScrollBehavior });
+      }
     }
     return () => {
-      document.body.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
     };
   }, [isMobileNavOpen]);
 
@@ -89,12 +110,19 @@ export function Header({ navLinks }: HeaderProps) {
       </header>
 
       {isMobileNavOpen ? (
-        <div className="fixed inset-0 z-40">
+        <div
+          className="fixed inset-0 z-40"
+          onClick={closeNav}
+          onMouseDown={closeNav}
+          onTouchStart={closeNav}
+        >
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity" />
           <div
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
-            onClick={closeNav}
-          />
-          <div className="relative z-10 flex h-full flex-col">
+            className="relative z-10 flex min-h-full flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-5 pt-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 text-sm font-black text-slate-900 shadow-lg shadow-sky-500/30">
@@ -111,12 +139,12 @@ export function Header({ navLinks }: HeaderProps) {
               </button>
             </div>
             <div className="flex flex-1 items-center justify-center px-6 pb-8 pt-6">
-              <div className="w-full max-w-sm rounded-3xl bg-slate-900/90 p-6 text-center shadow-2xl shadow-sky-500/20 ring-1 ring-white/10 backdrop-blur">
+              <div className="w-full max-w-sm max-h-[calc(100vh-140px)] overflow-y-auto rounded-3xl bg-slate-900/90 p-6 text-center shadow-2xl shadow-sky-500/20 ring-1 ring-white/10 backdrop-blur">
                 <div className="mb-6 flex flex-col items-center gap-2">
                   <p className="text-lg font-bold text-white">Kinoarea</p>
                   <p className="text-xs text-slate-400">медиа, фильмы и подборки</p>
                 </div>
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-3 pb-4 pt-2">
                   {navLinks.map((link) => (
                     <a
                       key={link}
