@@ -40,7 +40,7 @@ export default async function Home() {
     hasTmdbToken ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
   ]);
 
-  const nowPlayingLimited = nowPlayingDynamic.slice(0, 8);
+  const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
 
   const normalizedTrailers = weeklyTrailers.length ? weeklyTrailers.slice(0, 6) : trailers.slice(0, 6);
 

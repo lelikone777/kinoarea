@@ -157,7 +157,7 @@ export async function getPopularMovies(limit = 6): Promise<Movie[]> {
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Популярное"));
 }
 
-export async function getNowPlayingMovies(limit = 8): Promise<Movie[]> {
+export async function getNowPlayingMovies(limit = 12): Promise<Movie[]> {
   const ctx = await getAssetsContext();
   const { results } = await tmdbFetch<{ results: TmdbMovie[] }>("/movie/now_playing", {
     language: "ru-RU",

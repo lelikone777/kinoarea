@@ -37,10 +37,14 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
         ))}
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {movies.map((movie) => (
+        {movies.map((movie, index) => {
+          const isNinth = index === 8;
+          return (
           <div
             key={movie.title}
-            className="group relative overflow-hidden rounded-2xl bg-white/5 shadow-lg shadow-sky-500/10"
+            className={`group relative overflow-hidden rounded-2xl bg-white/5 shadow-lg shadow-sky-500/10 ${
+              isNinth ? "hidden sm:block lg:hidden" : ""
+            }`}
           >
             <div className="relative aspect-[2/3]">
               <Image
@@ -83,7 +87,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
               </div>
             </div>
           </div>
-        ))}
+        );})}
       </div>
     </section>
   );
