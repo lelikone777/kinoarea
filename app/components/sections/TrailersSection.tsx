@@ -2,7 +2,7 @@ import Image from "next/image";
 import { CalendarIcon, PlayIcon, ArrowRightIcon } from "../icons";
 import type { Trailer } from "../../data/content";
 
-type TrailerHero = {
+export type TrailerHero = {
   title: string;
   description: string;
   image: string;
@@ -61,9 +61,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
               </div>
               <div>
                 <h3 className="text-3xl font-extrabold sm:text-4xl">{hero.title}</h3>
-                <p className="mt-2 max-w-2xl text-base text-slate-200">
-                  {hero.description}
-                </p>
+                <p className="mt-2 max-w-2xl text-base text-slate-200">{hero.description}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-sky-500/30">
