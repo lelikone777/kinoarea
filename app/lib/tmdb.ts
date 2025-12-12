@@ -281,3 +281,35 @@ export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
 
   return null;
 }
+
+type TmdbPerson = {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department?: string;
+  popularity: number;
+  known_for?: { title?: string; name?: string; media_type?: string }[];
+};
+
+export async function getPopularPeople(limit = 10, page = 1): Promise<Person[]> {
+  const ctx = await getAssetsContext();
+  const { results } = await tmdbFetch<{ results: TmdbPerson[] }>("/person/popular", {
+    language: "ru-RU",
+    page,
+  });
+
+  return results.slice(0, limit).map((person) => {
+    const knownFor = person.known_for?.[0];
+    const knownTitle = knownFor?.title || knownFor?.name || "Знаковая роль";
+    const department = person.known_for_department || "Актёр";
+    const delta = `+${Math.round(person.popularity * 10)}`;
+
+    return {
+      name: person.name,
+      role: department,
+      knownFor: knownTitle,
+      delta,
+      image: person.profile_path ? `${ctx.base}${ctx.profileSize}${person.profile_path}` : FALLBACK_AVATAR,
+    };
+  });
+}

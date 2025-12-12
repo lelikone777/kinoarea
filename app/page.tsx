@@ -17,6 +17,7 @@ import {
   getUpcomingMovies,
   getWeeklyTrailers,
   getFeaturedTrailerHero,
+  getPopularPeople,
 } from "./lib/tmdb";
 import { Footer } from "./components/layout/Footer";
 import { Header } from "./components/layout/Header";
@@ -32,17 +33,41 @@ import { UpcomingSection } from "./components/sections/UpcomingSection";
 export default async function Home() {
   const hasTmdbToken = Boolean(process.env.TMDB_ACCESS_TOKEN);
 
-  const [popular, nowPlayingDynamic, upcomingDynamic, weeklyTrailers, featuredHero] = await Promise.all([
+  const [
+    popular,
+    nowPlayingDynamic,
+    upcomingDynamic,
+    weeklyTrailers,
+    featuredHero,
+    peopleWeek,
+    peopleMonth,
+    peopleYear,
+  ] = await Promise.all([
     hasTmdbToken ? getPopularMovies().catch(() => popularMovies) : Promise.resolve(popularMovies),
     hasTmdbToken ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
     hasTmdbToken ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
     hasTmdbToken ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
     hasTmdbToken ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
+    hasTmdbToken ? getPopularPeople(10, 1).catch(() => null) : Promise.resolve(null),
+    hasTmdbToken ? getPopularPeople(10, 2).catch(() => null) : Promise.resolve(null),
+    hasTmdbToken ? getPopularPeople(10, 3).catch(() => null) : Promise.resolve(null),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
 
   const normalizedTrailers = weeklyTrailers.length ? weeklyTrailers.slice(0, 6) : trailers.slice(0, 6);
+  const fallbackAvatar =
+    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80";
+  const fallbackPeopleWeek = [
+    ...peopleSpotlight,
+    ...peopleBoard.map((p) => ({
+      name: p.name,
+      role: p.role,
+      knownFor: "Популярный артист",
+      delta: p.delta,
+      image: fallbackAvatar,
+    })),
+  ];
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-50">
@@ -54,7 +79,11 @@ export default async function Home() {
         <NowPlaying movies={nowPlayingLimited} filters={nowFilters} />
         <TrailersSection hero={featuredHero ?? trailerHero} trailers={normalizedTrailers} />
         <PopularMovies movies={popular} />
-        <PeopleSection spotlight={peopleSpotlight} board={peopleBoard} />
+        <PeopleSection
+          week={peopleWeek ?? fallbackPeopleWeek}
+          month={peopleMonth ?? fallbackPeopleWeek}
+          year={peopleYear ?? fallbackPeopleWeek}
+        />
         <NewsSection articles={newsArticles} />
         <UpcomingSection movies={upcomingDynamic} />
         <BoxOfficeSection entries={boxOffice} />
