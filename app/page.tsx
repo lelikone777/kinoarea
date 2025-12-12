@@ -43,7 +43,7 @@ export default async function Home() {
     peopleMonth,
     peopleYear,
   ] = await Promise.all([
-    hasTmdbToken ? getPopularMovies().catch(() => popularMovies) : Promise.resolve(popularMovies),
+    hasTmdbToken ? getPopularMovies(60).catch(() => popularMovies) : Promise.resolve(popularMovies),
     hasTmdbToken ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
     hasTmdbToken ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
     hasTmdbToken ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
@@ -56,6 +56,10 @@ export default async function Home() {
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
 
   const normalizedTrailers = weeklyTrailers.length ? weeklyTrailers.slice(0, 6) : trailers.slice(0, 6);
+  const popularFilled =
+    popular.length >= 60
+      ? popular.slice(0, 60)
+      : [...Array(60)].map((_, i) => popular[i % popular.length]);
   const fallbackAvatar =
     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80";
   const fallbackPeopleWeek = [
@@ -78,7 +82,7 @@ export default async function Home() {
       <main className="relative z-10 mx-auto max-w-6xl px-5 pb-24 pt-10">
         <NowPlaying movies={nowPlayingLimited} filters={nowFilters} />
         <TrailersSection hero={featuredHero ?? trailerHero} trailers={normalizedTrailers} />
-        <PopularMovies movies={popular} />
+        <PopularMovies movies={popularFilled} />
         <PeopleSection
           week={peopleWeek ?? fallbackPeopleWeek}
           month={peopleMonth ?? fallbackPeopleWeek}
