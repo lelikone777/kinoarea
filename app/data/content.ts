@@ -175,6 +175,7 @@ export const popularMovies: Movie[] = [
     genre: "Приключения • 2ч 3м",
     rating: 8.9,
     tag: "Семейное",
+    year: 2019,
     image: "https://image.tmdb.org/t/p/w500/w9kR8qbmQ01HwnvK4alvnQ2ca0L.jpg",
   },
   {
@@ -183,6 +184,7 @@ export const popularMovies: Movie[] = [
     rating: 9.1,
     tag: "IMAX",
     badge: "Хит",
+    year: 2019,
     image: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
   },
   {
@@ -190,6 +192,7 @@ export const popularMovies: Movie[] = [
     genre: "Драма • 2ч 2м",
     rating: 8.9,
     tag: "Премьера",
+    year: 2024,
     image: "https://image.tmdb.org/t/p/w500/jtrhTYB7xSrJxR1vusu99nvnZ1g.jpg",
   },
   {
@@ -197,6 +200,7 @@ export const popularMovies: Movie[] = [
     genre: "Биография • 2ч 32м",
     rating: 8.6,
     tag: "Спорт",
+    year: 2019,
     image: "https://image.tmdb.org/t/p/w500/6ApDtO7xaWAfPqfi2IARXIzj8QS.jpg",
   },
   {
@@ -204,6 +208,7 @@ export const popularMovies: Movie[] = [
     genre: "Военный • 1ч 59м",
     rating: 8.5,
     tag: "IMAX",
+    year: 2019,
     image: "https://image.tmdb.org/t/p/w500/iZf0KyrE25z1sage4SYFLCCrMi9.jpg",
   },
   {
@@ -211,6 +216,7 @@ export const popularMovies: Movie[] = [
     genre: "Фантастика • 2ч 31м",
     rating: 7.4,
     tag: "Фэнтези",
+    year: 2020,
     image: "https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg",
   },
 ];

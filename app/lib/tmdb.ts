@@ -147,13 +147,20 @@ function mapMovie(movie: TmdbMovie, ctx: Awaited<ReturnType<typeof getAssetsCont
   };
 }
 
-export async function getPopularMovies(limit = 6): Promise<Movie[]> {
+export async function getPopularMovies(limit = 6, year?: number): Promise<Movie[]> {
   const ctx = await getAssetsContext();
-  const { results } = await tmdbFetch<{ results: TmdbMovie[] }>("/movie/popular", {
+  const endpoint = year ? "/discover/movie" : "/movie/popular";
+  const params: Record<string, string | number> = {
     language: "ru-RU",
     region: "RU",
+    sort_by: "popularity.desc",
     page: 1,
-  });
+  };
+  if (year) {
+    params.primary_release_year = year;
+  }
+
+  const { results } = await tmdbFetch<{ results: TmdbMovie[] }>(endpoint, params);
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Популярное"));
 }
 
