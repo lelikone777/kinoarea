@@ -13,15 +13,16 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.18em] text-slate-400">
-            подборка недели
+            Горячие сеансы сегодня
           </p>
-          <h1 className="text-3xl font-extrabold sm:text-4xl">Сейчас в кино</h1>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">Сейчас в прокате</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Смотрите премьеры, выбирайте формат и бронируйте билеты.
+            Смотрите свежие премьеры в любимых форматах и выбирайте удобные сеансы по
+            городу.
           </p>
         </div>
         <button className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40">
-          Все фильмы
+          Полный список
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
         </button>
       </div>
@@ -72,7 +73,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
                     </span>
                   </span>
                   <button className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/20">
-                    Билеты
+                    Подробнее
                   </button>
                 </div>
                 <p className="mt-3 text-lg font-bold leading-6 text-white">

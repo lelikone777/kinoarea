@@ -8,15 +8,15 @@ export function Footer() {
           </div>
           <div>
             <p className="text-base font-bold text-white">КиноАреа</p>
-            <p className="text-xs text-slate-500">смотрите, обсуждайте, ждите</p>
+            <p className="text-xs text-slate-500">афиша, премьеры, билеты</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-3 text-xs text-slate-400">
-          <span>Афиша</span>
-          <span>Новости</span>
-          <span>Премьеры</span>
-          <span>Персоны</span>
-          <span>Контакты</span>
+          <span>О сервисе</span>
+          <span>Редакция</span>
+          <span>Поддержка</span>
+          <span>Реклама</span>
+          <span>Вакансии</span>
         </div>
         <p className="text-xs text-slate-500">
           (c) 2025 КиноАреа. Все права защищены.

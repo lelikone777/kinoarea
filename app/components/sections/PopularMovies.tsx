@@ -53,7 +53,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
                     {movie.rating.toFixed(1)}
                   </div>
                   <button className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-900 transition hover:-translate-y-0.5">
-                    Расписание
+                    Билеты
                   </button>
                 </div>
                 <p className="mt-3 text-lg font-bold leading-6">{movie.title}</p>

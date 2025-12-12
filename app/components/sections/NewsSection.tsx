@@ -12,7 +12,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
   return (
     <section className="mt-14 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-extrabold">Последние новости</h2>
+        <h2 className="text-2xl font-extrabold">Новости индустрии</h2>
         <button className="group flex items-center gap-2 text-sm font-semibold text-slate-200 transition hover:text-white">
           Все новости
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 
@@ -8,15 +9,15 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "КиноАреа — афиша, трейлеры и новости",
+  title: "КиноАреа — афиша, трейлеры и билеты",
   description:
-    "КиноАреа — подборка фильмов, трейлеров, рейтингов и новостей кино с актуальными подборками.",
+    "КиноАреа — свежие премьеры, расписание, подборки трейлеров и новости индустрии. Смотрите, выбирайте сеансы и собирайте подборки любимых фильмов.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="ru">

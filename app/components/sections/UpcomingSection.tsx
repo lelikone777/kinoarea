@@ -10,8 +10,8 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
   return (
     <section className="mt-14 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-extrabold">Ожидаемые новинки</h2>
-        <span className="text-xs text-slate-400">лучшее — скоро в кино</span>
+        <h2 className="text-2xl font-extrabold">Скоро на экранах</h2>
+        <span className="text-xs text-slate-400">Топ ожиданий — фильмы и сериалы</span>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {movies.map((movie) => (
@@ -40,7 +40,7 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
                     {movie.rating.toFixed(1)}
                   </div>
                   <button className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/20">
-                    Жду
+                    Жду!
                   </button>
                 </div>
                 <p className="mt-3 text-lg font-bold leading-6">{movie.title}</p>

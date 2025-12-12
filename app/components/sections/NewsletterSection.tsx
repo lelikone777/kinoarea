@@ -5,11 +5,13 @@ export function NewsletterSection() {
     <section className="mt-16 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-blue-800 via-indigo-700 to-sky-500 p-8 shadow-2xl shadow-blue-500/30">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-3">
-          <p className="text-sm uppercase tracking-[0.2em] text-sky-200">подписка</p>
-          <h3 className="text-3xl font-extrabold text-white">Подпишитесь на e-mail рассылку</h3>
+          <p className="text-sm uppercase tracking-[0.2em] text-sky-200">Подборка недели</p>
+          <h3 className="text-3xl font-extrabold text-white">
+            Подписка на e-mail с лучшими трейлерами и премьерами
+          </h3>
           <p className="max-w-xl text-sm text-sky-100">
-            Будьте в курсе премьер, расписаний и специальных показов. Один раз в неделю без
-            спама.
+            Получайте подборки фильмов, расписание премьер и материалы редакции. Только
+            полезные письма без спама.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
@@ -22,7 +24,8 @@ export function NewsletterSection() {
             </button>
           </div>
           <p className="text-xs text-sky-100/70">
-            Мы ценим вашу приватность и не передаем данные третьим лицам.
+            Нажимая кнопку, вы соглашаетесь на обработку данных и получение писем о
+            новинках.
           </p>
         </div>
         <div className="relative hidden items-center justify-center lg:flex">
@@ -31,7 +34,7 @@ export function NewsletterSection() {
             <div className="relative h-32 w-20 overflow-hidden rounded-xl">
               <Image
                 src="https://image.tmdb.org/t/p/w300/jtrhTYB7xSrJxR1vusu99nvnZ1g.jpg"
-                alt="Джентльмены"
+                alt="Джокер"
                 fill
                 sizes="120px"
                 className="h-full w-full object-cover"
@@ -40,7 +43,7 @@ export function NewsletterSection() {
             <div className="relative h-32 w-20 overflow-hidden rounded-xl">
               <Image
                 src="https://image.tmdb.org/t/p/w300/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg"
-                alt="Джокер"
+                alt="Джокер, альтернативный постер"
                 fill
                 sizes="120px"
                 className="h-full w-full object-cover"

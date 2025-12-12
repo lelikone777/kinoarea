@@ -11,8 +11,8 @@ export function PeopleSection({ spotlight, board }: PeopleSectionProps) {
     <section className="mt-14 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="space-y-4 rounded-3xl border border-white/5 bg-white/5 p-6 shadow-xl shadow-emerald-500/10">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold">Популярные персоны</h2>
-          <span className="text-sm text-slate-400">за месяц</span>
+          <h2 className="text-2xl font-extrabold">Люди в фокусе</h2>
+          <span className="text-sm text-slate-400">по росту популярности</span>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {spotlight.map((person) => (
@@ -52,8 +52,8 @@ export function PeopleSection({ spotlight, board }: PeopleSectionProps) {
 
       <div className="rounded-3xl border border-white/5 bg-white/5 p-6 shadow-xl shadow-indigo-500/10">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">Новые лица</h3>
-          <span className="text-xs text-slate-400">рейтинг популярности</span>
+          <h3 className="text-lg font-bold text-white">Доска лидеров</h3>
+          <span className="text-xs text-slate-400">обновляется ежедневно</span>
         </div>
         <div className="mt-4 space-y-3">
           {board.map((person) => (

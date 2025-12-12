@@ -24,7 +24,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
   return (
     <section className="mt-14 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-extrabold">Новые трейлеры</h2>
+        <h2 className="text-2xl font-extrabold">Трейлеры недели</h2>
         <button className="group flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/5">
           Все трейлеры
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
@@ -52,7 +52,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                   Экшн
                 </span>
                 <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">
-                  Премьера
+                  Драма
                 </span>
                 <span className="flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 font-semibold text-emerald-300 backdrop-blur">
                   <PlayIcon className="h-4 w-4" />
@@ -61,7 +61,9 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
               </div>
               <div>
                 <h3 className="text-3xl font-extrabold sm:text-4xl">{hero.title}</h3>
-                <p className="mt-2 max-w-2xl text-base text-slate-200">{hero.description}</p>
+                <p className="mt-2 max-w-2xl text-base text-slate-200">
+                  {hero.description}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-sky-500/30">
@@ -70,7 +72,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                 </button>
                 <button className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/50">
                   <CalendarIcon className="h-4 w-4 text-slate-300" />
-                  Подробнее
+                  В расписание
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -126,7 +128,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                 <div className="space-y-1 px-4 py-3">
                   <p className="text-sm font-semibold text-white">{trailer.title}</p>
                   <p className="text-xs text-slate-400">
-                    Быстрый взгляд на главные сцены фильма
+                    Выбор редакции и лучшие моменты фильма
                   </p>
                 </div>
               </div>

@@ -45,17 +45,17 @@ export type BoxOffice = {
 
 export const navLinks = [
   "Афиша",
-  "Онлайн-кинотеатр",
-  "Будущие релизы",
+  "Сеансы",
+  "Фильмы и сериалы",
+  "Премьеры",
+  "Люди",
   "Новости",
-  "Трейлеры",
-  "Персоны",
 ];
 
 export const nowFilters = [
-  "Все фильмы",
-  "Сегодня в кино",
-  "По подписке",
+  "Все форматы",
+  "Ближайшие",
+  "Новинки недели",
   "IMAX",
   "4DX",
 ];
@@ -63,58 +63,58 @@ export const nowFilters = [
 export const nowPlaying: Movie[] = [
   {
     title: "Джокер",
-    genre: "триллер · 2ч 2м",
+    genre: "Триллер • 2ч 2м",
     rating: 9.1,
     tag: "IMAX",
-    badge: "горячо",
+    badge: "Хит",
     image: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
   },
   {
     title: "Хищные птицы",
-    genre: "боевик · 1ч 49м",
+    genre: "Боевик • 1ч 49м",
     rating: 8.0,
     tag: "4DX",
-    badge: "премьера",
+    badge: "Премьера",
     image: "https://image.tmdb.org/t/p/w500/h4VB6m0RwcicVEZvzftYZyKXs6K.jpg",
   },
   {
     title: "Ford против Ferrari",
-    genre: "драма · 2ч 32м",
+    genre: "Биография • 2ч 32м",
     rating: 8.6,
     tag: "PREMIUM",
     image: "https://image.tmdb.org/t/p/w500/6ApDtO7xaWAfPqfi2IARXIzj8QS.jpg",
   },
   {
-    title: "Джентльмены",
-    genre: "криминал · 1ч 53м",
+    title: "Джокер: версия режиссёра",
+    genre: "Драма • 2ч 2м",
     rating: 8.9,
     tag: "IMAX",
     image: "https://image.tmdb.org/t/p/w500/jtrhTYB7xSrJxR1vusu99nvnZ1g.jpg",
   },
   {
-    title: "Чудо-женщина 1984",
-    genre: "фэнтези · 2ч 31м",
+    title: "Чудо‑женщина 1984",
+    genre: "Фантастика • 2ч 31м",
     rating: 7.4,
     tag: "2D",
     image: "https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg",
   },
   {
     title: "1917",
-    genre: "военный · 1ч 59м",
+    genre: "Военный • 1ч 59м",
     rating: 8.5,
     tag: "IMAX",
     image: "https://image.tmdb.org/t/p/w500/iZf0KyrE25z1sage4SYFLCCrMi9.jpg",
   },
   {
-    title: "Ёж Соник",
-    genre: "семейный · 1ч 39м",
+    title: "Бладшот",
+    genre: "Фантастика • 1ч 49м",
     rating: 7.8,
     tag: "4DX",
     image: "https://image.tmdb.org/t/p/w500/aQvJ5WPzZgYVDrxLX4R6cLJCEaQ.jpg",
   },
   {
-    title: "Не время умирать",
-    genre: "боевик · 2ч 43м",
+    title: "Человек‑паук: Через вселенные",
+    genre: "Анимация • 1ч 43м",
     rating: 8.1,
     tag: "IMAX",
     image: "https://image.tmdb.org/t/p/w500/iUgygt3fscRoKWCV1d0C7FbM9TP.jpg",
@@ -124,10 +124,10 @@ export const nowPlaying: Movie[] = [
 export const trailerHero = {
   title: "Форсаж 9",
   description:
-    "Доминик Торетто вновь собирает семью, чтобы остановить опасного противника и не дать прошлому разрушить их будущее.",
+    "Доминик Торетто вновь собирает семью, чтобы бросить вызов старому врагу. Гонки, трюки и огромный бюджет — то, что мы любим в серии.",
   image: "https://image.tmdb.org/t/p/w1280/bOFaAXmWWXC3Rbv4u4uM9ZSzRXP.jpg",
   duration: "2:32",
-  tag: "Премьера недели",
+  tag: "Трейлер недели",
   actors: [
     {
       name: "Вин Дизель",
@@ -146,23 +146,23 @@ export const trailerHero = {
 
 export const trailers: Trailer[] = [
   {
-    title: "Довод",
+    title: "Тихое место II",
     time: "02:10",
-    note: "Новый трейлер",
+    note: "Премьера",
     image: "https://image.tmdb.org/t/p/w780/k68nPLbIST6NP96JmTxmZijEvCA.jpg",
   },
   {
-    title: "Мулан",
+    title: "Дюна",
     time: "01:34",
     image: "https://image.tmdb.org/t/p/w780/aKx1ARwG55zZ0GpRvU2WrGrCG9o.jpg",
   },
   {
-    title: "Чёрная вдова",
+    title: "Отряд самоубийц",
     time: "02:08",
     image: "https://image.tmdb.org/t/p/w780/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg",
   },
   {
-    title: "Дюна",
+    title: "Вечные",
     time: "03:11",
     note: "IMAX",
     image: "https://image.tmdb.org/t/p/w780/d5NXSklXo0qyIYkgV94XAgMIckC.jpg",
@@ -171,63 +171,63 @@ export const trailers: Trailer[] = [
 
 export const popularMovies: Movie[] = [
   {
-    title: "История игрушек 4",
-    genre: "приключения · 1ч 40м",
+    title: "Джуманджи: Новый уровень",
+    genre: "Приключения • 2ч 3м",
     rating: 8.9,
-    tag: "семейное",
+    tag: "Семейное",
     image: "https://image.tmdb.org/t/p/w500/w9kR8qbmQ01HwnvK4alvnQ2ca0L.jpg",
   },
   {
     title: "Джокер",
-    genre: "триллер · 2ч 2м",
+    genre: "Триллер • 2ч 2м",
     rating: 9.1,
     tag: "IMAX",
-    badge: "хит",
+    badge: "Хит",
     image: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
   },
   {
-    title: "Джентльмены",
-    genre: "криминал · 1ч 53м",
+    title: "Джокер: версия режиссёра",
+    genre: "Драма • 2ч 2м",
     rating: 8.9,
-    tag: "премьера",
+    tag: "Премьера",
     image: "https://image.tmdb.org/t/p/w500/jtrhTYB7xSrJxR1vusu99nvnZ1g.jpg",
   },
   {
     title: "Ford против Ferrari",
-    genre: "драма · 2ч 32м",
+    genre: "Биография • 2ч 32м",
     rating: 8.6,
-    tag: "спорт",
+    tag: "Спорт",
     image: "https://image.tmdb.org/t/p/w500/6ApDtO7xaWAfPqfi2IARXIzj8QS.jpg",
   },
   {
     title: "1917",
-    genre: "военный · 1ч 59м",
+    genre: "Военный • 1ч 59м",
     rating: 8.5,
-    tag: "основное",
+    tag: "IMAX",
     image: "https://image.tmdb.org/t/p/w500/iZf0KyrE25z1sage4SYFLCCrMi9.jpg",
   },
   {
-    title: "Чудо-женщина 1984",
-    genre: "фэнтези · 2ч 31м",
+    title: "Чудо‑женщина 1984",
+    genre: "Фантастика • 2ч 31м",
     rating: 7.4,
-    tag: "формат",
+    tag: "Фэнтези",
     image: "https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg",
   },
 ];
 
 export const peopleSpotlight: Person[] = [
   {
-    name: "Квентин Тарантино",
-    role: "Режиссер",
-    knownFor: "Джанго освобожденный",
+    name: "Алина Захарова",
+    role: "Режиссёр",
+    knownFor: "«Полярный свет» — хитовый сериал",
     delta: "+112 350",
     image:
       "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80",
   },
   {
-    name: "Джейсон Стейтем",
-    role: "Актер",
-    knownFor: "Форсаж: Хоббс и Шоу",
+    name: "Максим Иванов",
+    role: "Актёр",
+    knownFor: "«Форсаж 9» — роль второго плана",
     delta: "+75 930",
     image:
       "https://images.unsplash.com/photo-1500336624523-d727130c3328?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80",
@@ -235,38 +235,38 @@ export const peopleSpotlight: Person[] = [
 ];
 
 export const peopleBoard: PersonStat[] = [
-  { name: "Кристофер Нолан", role: "Режиссер", delta: "+112 350" },
-  { name: "Хоакин Феникс", role: "Актер", delta: "+83 455" },
-  { name: "Роберт Дауни мл.", role: "Актер", delta: "+78 124" },
-  { name: "Джеймс Ван", role: "Режиссер", delta: "+61 044" },
-  { name: "Райан Рейнольдс", role: "Актер", delta: "+55 023" },
-  { name: "Зои Салдана", role: "Актриса", delta: "+49 011" },
-  { name: "Галь Гадот", role: "Актриса", delta: "+42 680" },
-  { name: "Райан Гослинг", role: "Актер", delta: "+39 520" },
+  { name: "Екатерина Смирнова", role: "Режиссёр", delta: "+112 350" },
+  { name: "Дмитрий Орлов", role: "Актёр", delta: "+83 455" },
+  { name: "София Кузнецова", role: "Актриса", delta: "+78 124" },
+  { name: "Игорь Павлов", role: "Продюсер", delta: "+61 044" },
+  { name: "Мария Волкова", role: "Актриса", delta: "+55 023" },
+  { name: "Андрей Лебедев", role: "Сценарист", delta: "+49 011" },
+  { name: "Олег Никитин", role: "Оператор", delta: "+42 680" },
+  { name: "Наталья Романова", role: "Актриса", delta: "+39 520" },
 ];
 
 export const newsArticles: News[] = [
   {
-    title: "Не время умирать. Перенос релиза фильма",
-    date: "07 апреля 2025",
+    title: "Каскадёры объединились. Как снимали финальный трюк в «Форсаже 9»",
+    date: "07 января 2025",
     excerpt:
-      "Новый фильм о Джеймсе Бонде выйдет позже, чем ожидалось. Студия смещает график проката ради международных сборов.",
+      "Группа постановщиков поделилась деталями финальной сцены — использовали реальные автомобили и минимум графики.",
     image:
       "https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1200&q=80",
   },
   {
-    title: "Дисней объявил новые даты премьер",
-    date: "05 апреля 2025",
+    title: "Новый фестиваль авторского кино пройдёт летом в Сочи",
+    date: "05 января 2025",
     excerpt:
-      "Сразу несколько блокбастеров получат свежие даты. В подборке — продолжения любимых франшиз и новые проекты.",
+      "Организаторы обещают открытый питчинг, внеконкурсную программу и показы под открытым небом.",
     image:
       "https://images.unsplash.com/photo-1505682634904-d7c075c738d4?auto=format&fit=crop&w=600&q=80",
   },
   {
-    title: "Релиз «Джентльменов» в стриминге",
-    date: "01 апреля 2025",
+    title: "Премия кинокритиков: кто лидирует в шорт-листе 2025",
+    date: "01 января 2025",
     excerpt:
-      "После успеха в кинотеатрах Гай Ричи готовит цифровой релиз — появится расширенная версия с бонус-сценами.",
+      "В списке претендентов — независимые драмы, научная фантастика и несколько отечественных премьер.",
     image:
       "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?auto=format&fit=crop&w=600&q=80",
   },
@@ -274,31 +274,31 @@ export const newsArticles: News[] = [
 
 export const upcomingMovies: Movie[] = [
   {
-    title: "Дюна",
-    genre: "фантастика · 2ч 35м",
+    title: "Вечные",
+    genre: "Фантастика • 2ч 35м",
     rating: 8.8,
-    tag: "ждём",
+    tag: "Премьера",
     image: "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg",
   },
   {
     title: "Топ Ган: Мэверик",
-    genre: "боевик · 2ч 11м",
+    genre: "Боевик • 2ч 11м",
     rating: 9.0,
     tag: "IMAX",
     image: "https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg",
   },
   {
-    title: "Бэтмен",
-    genre: "детектив · 2ч 56м",
+    title: "Чёрная Вдова",
+    genre: "Боевик • 2ч 6м",
     rating: 8.4,
-    tag: "премьера",
+    tag: "Премьера",
     image: "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg",
   },
   {
-    title: "Черная вдова",
-    genre: "боевик · 2ч 13м",
+    title: "Отряд самоубийц",
+    genre: "Боевик • 2ч 13м",
     rating: 7.9,
-    tag: "MARVEL",
+    tag: "DC",
     image: "https://image.tmdb.org/t/p/w500/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg",
   },
 ];
@@ -306,14 +306,14 @@ export const upcomingMovies: Movie[] = [
 export const boxOffice: BoxOffice[] = [
   {
     place: "1 место",
-    title: "Джентльмены",
+    title: "Джокер",
     amount: "$145 000 000",
     change: "+16%",
     image: "https://image.tmdb.org/t/p/w185/jtrhTYB7xSrJxR1vusu99nvnZ1g.jpg",
   },
   {
     place: "2 место",
-    title: "Ёж Соник",
+    title: "Бладшот",
     amount: "$126 000 000",
     change: "+12%",
     image: "https://image.tmdb.org/t/p/w185/aQvJ5WPzZgYVDrxLX4R6cLJCEaQ.jpg",
@@ -334,7 +334,7 @@ export const boxOffice: BoxOffice[] = [
   },
   {
     place: "5 место",
-    title: "Чудо-женщина 1984",
+    title: "Чудо‑женщина 1984",
     amount: "$61 200 000",
     change: "+3%",
     image: "https://image.tmdb.org/t/p/w185/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg",
