@@ -7,6 +7,8 @@ type PopularMoviesProps = {
 };
 
 export function PopularMovies({ movies }: PopularMoviesProps) {
+  const items = movies.slice(0, 6);
+
   return (
     <section className="mt-14 space-y-6">
       <div className="flex items-center justify-between">
@@ -21,11 +23,13 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           <span>2022</span>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {movies.map((movie) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((movie, index) => (
           <div
             key={movie.title}
-            className="group overflow-hidden rounded-2xl border border-white/5 bg-white/5 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-1 hover:border-white/15"
+            className={`group overflow-hidden rounded-2xl border border-white/5 bg-white/5 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-1 hover:border-white/15 ${
+              index >= 4 ? "hidden lg:block" : ""
+            }`}
           >
             <div className="relative aspect-[2/3]">
               <Image

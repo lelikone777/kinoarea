@@ -21,6 +21,8 @@ type TrailersSectionProps = {
 };
 
 export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
+  const items = trailers.slice(0, 5);
+
   return (
     <section className="mt-14 space-y-6">
       <div className="flex items-center justify-between">
@@ -31,8 +33,8 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
         </button>
       </div>
       <div className="overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-xl shadow-sky-500/10">
-        <div className="relative grid items-center gap-6 lg:grid-cols-[2fr_1fr]">
-          <div className="relative h-[340px] sm:h-[420px]">
+        <div className="grid gap-4 p-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:auto-rows-[minmax(180px,1fr)]">
+          <div className="relative h-[340px] overflow-hidden rounded-2xl sm:col-span-2 sm:h-[420px] lg:col-span-2 lg:row-span-2 lg:h-full">
             <Image
               src={hero.image}
               alt={hero.title}
@@ -98,40 +100,40 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-1">
-            {trailers.map((trailer) => (
-              <div
-                key={trailer.title}
-                className="group overflow-hidden rounded-2xl border border-white/5 bg-white/5 transition hover:-translate-y-1 hover:border-white/20"
-              >
-                <div className="relative aspect-video">
-                  <Image
-                    src={trailer.image}
-                    alt={trailer.title}
-                    fill
-                    sizes="(max-width: 1024px) 50vw, 30vw"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
-                  <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
-                    <PlayIcon className="h-4 w-4" />
-                    {trailer.time}
-                  </div>
-                  {trailer.note ? (
-                    <div className="absolute left-3 top-3 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                      {trailer.note}
-                    </div>
-                  ) : null}
+          {items.map((trailer, index) => {
+            const smHidden = index >= 4 ? "hidden lg:block" : "";
+            return (
+            <div
+              key={trailer.title}
+              className={`group relative h-full min-h-[180px] overflow-hidden rounded-2xl border border-white/5 bg-white/5 transition hover:-translate-y-1 hover:border-white/20 ${smHidden}`}
+            >
+              <div className="relative h-full">
+                <Image
+                  src={trailer.image}
+                  alt={trailer.title}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
+                <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
+                  <PlayIcon className="h-4 w-4" />
+                  {trailer.time}
                 </div>
-                <div className="space-y-1 px-4 py-3">
+                {trailer.note ? (
+                  <div className="absolute left-3 top-3 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                    {trailer.note}
+                  </div>
+                ) : null}
+                <div className="absolute inset-x-3 bottom-3 space-y-1">
                   <p className="text-sm font-semibold text-white">{trailer.title}</p>
                   <p className="text-xs text-slate-400">
                     Выбор редакции и лучшие моменты фильма
                   </p>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          );})}
         </div>
       </div>
     </section>
