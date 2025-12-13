@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
 import Image from "next/image";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
@@ -14,6 +15,7 @@ const YEAR_RANGE = 40; // сколько лет назад можно листа
 
 export function PopularMovies({ movies }: PopularMoviesProps) {
   const scrollYearsRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | "all">("all");
   const [page, setPage] = useState(1);
   const [moviesState, setMoviesState] = useState<Movie[]>(movies);
@@ -41,19 +43,20 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     return pool.length ? pool : moviesState;
   }, [moviesState, selectedYear]);
 
-  const pages = useMemo(() => {
-    const chunks: Movie[][] = [];
-    for (let i = 0; i < filtered.length; i += CARDS_PER_PAGE) {
-      chunks.push(filtered.slice(i, i + CARDS_PER_PAGE));
-    }
-    return chunks;
-  }, [filtered]);
+  useEffect(() => {
+    setPage((prev) => Math.min(prev, Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE))));
+  }, [filtered.length]);
 
-  const totalPages = Math.max(1, pages.length || 1);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
 
   const goToPage = (p: number) => {
-    setPage(Math.min(Math.max(1, p), totalPages));
+    const clamped = Math.min(Math.max(1, p), totalPages);
+    setPage(clamped);
+    const node = trackRef.current;
+    if (!node) return;
+    const step = node.clientWidth || 0;
+    node.scrollTo({ left: (clamped - 1) * step, behavior: "smooth" });
   };
 
   const scrollYears = (dir: "prev" | "next") => {
@@ -63,11 +66,64 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     node.scrollBy({ left: delta, behavior: "smooth" });
   };
 
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.buttons !== 1) return;
+    dragActive.current = true;
+    dragStartX.current = event.clientX;
+    setIsDragging(true);
+    setDragOffset(0);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragActive.current) return;
+    const delta = event.clientX - dragStartX.current;
+    setDragOffset(delta);
+  };
+
+  const endDrag = (event?: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragActive.current) return;
+    dragActive.current = false;
+    const delta = dragOffset;
+    const threshold = 50;
+    if (Math.abs(delta) > threshold) {
+      if (delta < 0) {
+        goToPage(currentPage + 1);
+      } else {
+        goToPage(currentPage - 1);
+      }
+    }
+    setIsDragging(false);
+    setDragOffset(0);
+    event?.currentTarget.releasePointerCapture?.(event.pointerId);
+  };
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (delta === 0) return;
+    event.preventDefault();
+    if (wheelLock.current) return;
+    wheelAccum.current += delta;
+    const threshold = 60;
+    if (wheelAccum.current > threshold) {
+      wheelLock.current = true;
+      wheelAccum.current = 0;
+      goToPage(currentPage + 1);
+      setTimeout(() => (wheelLock.current = false), 250);
+    } else if (wheelAccum.current < -threshold) {
+      wheelLock.current = true;
+      wheelAccum.current = 0;
+      goToPage(currentPage - 1);
+      setTimeout(() => (wheelLock.current = false), 250);
+    }
+  };
+
   const handleYearSelect = async (year: number | "all") => {
     setSelectedYear(year);
     setPage(1);
     if (year === "all") {
       setMoviesState(movies);
+      trackRef.current?.scrollTo({ left: 0, behavior: "smooth" });
       return;
     }
     setIsLoadingYear(true);
@@ -80,6 +136,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
       setMoviesState(movies);
     } finally {
       setIsLoadingYear(false);
+      trackRef.current?.scrollTo({ left: 0, behavior: "smooth" });
     }
   };
 
@@ -108,7 +165,8 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
             </button>
             <div
               ref={scrollYearsRef}
-              className="flex max-w-[260px] items-center gap-2 overflow-x-auto scrollbar-hide"
+              data-year-scroll
+              className="flex max-w-[260px] items-center gap-2 overflow-x-auto pr-1"
             >
               {years.map((y) => (
                 <button
@@ -136,46 +194,41 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
         <div className="absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none" />
         <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none" />
         <div
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${(currentPage - 1) * 100}%)` }}
+          ref={trackRef}
+          className="flex gap-4 overflow-x-auto scroll-smooth pr-4"
         >
-          {pages.map((chunk, idx) => (
+          {filtered.map((movie) => (
             <div
-              key={idx}
-              className="grid min-w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+              key={movie.title + movie.year}
+              className="min-w-[240px] max-w-[260px] flex-1 sm:min-w-[260px] lg:min-w-[260px]"
             >
-              {chunk.map((movie) => (
-                <div
-                  key={movie.title + movie.year}
-                  className="group relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-1 hover:border-white/20"
-                >
-                  <div className="relative aspect-[2/3]">
-                    <Image
-                      src={movie.image}
-                      alt={movie.title}
-                      fill
-                      sizes="(max-width: 1024px) 50vw, 25vw"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
-                    {movie.tag ? (
-                      <span className="absolute left-3 top-3 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                        {movie.tag}
-                      </span>
-                    ) : null}
-                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-slate-950 shadow">
-                      <StarIcon className="h-4 w-4 text-slate-900" />
-                      {movie.rating.toFixed(1)}
+              <div className="group relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-1 hover:border-white/20">
+                <div className="relative aspect-[2/3]">
+                  <Image
+                    src={movie.image}
+                    alt={movie.title}
+                    fill
+                    sizes="(max-width: 1024px) 50vw, 25vw"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+                  {movie.tag ? (
+                    <span className="absolute left-3 top-3 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                      {movie.tag}
                     </span>
-                    <div className="absolute inset-x-3 bottom-3 space-y-2">
-                      <p className="text-base font-bold leading-6 text-white">{movie.title}</p>
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-200">
-                        {movie.genre}
-                      </p>
-                    </div>
+                  ) : null}
+                  <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-slate-950 shadow">
+                    <StarIcon className="h-4 w-4 text-slate-900" />
+                    {movie.rating.toFixed(1)}
+                  </span>
+                  <div className="absolute inset-x-3 bottom-3 space-y-2">
+                    <p className="text-base font-bold leading-6 text-white">{movie.title}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-200">
+                      {movie.genre}
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           ))}
         </div>
@@ -211,6 +264,23 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
         Смотреть все
         <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
       </button>
+      <style jsx global>{`
+        [data-year-scroll]::-webkit-scrollbar {
+          height: 6px;
+        }
+        [data-year-scroll]::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 9999px;
+        }
+        [data-year-scroll]::-webkit-scrollbar-thumb {
+          background: linear-gradient(90deg, #38bdf8, #6366f1);
+          border-radius: 9999px;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+        [data-year-scroll]::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(90deg, #22d3ee, #818cf8);
+        }
+      `}</style>
     </section>
   );
 }
