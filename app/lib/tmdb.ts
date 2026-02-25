@@ -1,4 +1,4 @@
-import type { Movie, Trailer } from "../data/content";
+import type { Movie, Person, Trailer } from "../data/content";
 import type { TrailerHero } from "../components/sections/TrailersSection";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -259,7 +259,7 @@ export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
     if (!video) continue;
 
     const imagePath = details.backdrop_path ?? details.poster_path;
-    const durationMinutes = details.runtime ?? movie.runtime;
+    const durationMinutes = details.runtime;
     const duration =
       typeof durationMinutes === "number" && durationMinutes > 0
         ? `${Math.floor(durationMinutes / 60)}:${String(durationMinutes % 60).padStart(2, "0")}`
