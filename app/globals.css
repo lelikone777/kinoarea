@@ -50,3 +50,35 @@ a {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.edge-fade-x {
+  --edge-fade-size: 2.75rem;
+  --edge-fade-left: 0;
+  --edge-fade-right: 0;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 calc(var(--edge-fade-size) * var(--edge-fade-left)),
+    #000 calc(100% - (var(--edge-fade-size) * var(--edge-fade-right))),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 calc(var(--edge-fade-size) * var(--edge-fade-left)),
+    #000 calc(100% - (var(--edge-fade-size) * var(--edge-fade-right))),
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.edge-fade-left {
+  --edge-fade-left: 1;
+}
+
+.edge-fade-right {
+  --edge-fade-right: 1;
+}

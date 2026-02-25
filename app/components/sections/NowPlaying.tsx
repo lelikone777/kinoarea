@@ -54,6 +54,9 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
   const [activeFilter, setActiveFilter] = useState(filterChips[0] ?? premieresFilter);
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
   const desktopFilterRef = useRef<HTMLDivElement | null>(null);
+  const mobileFiltersRef = useRef<HTMLDivElement | null>(null);
+  const [showMobileFadeLeft, setShowMobileFadeLeft] = useState(false);
+  const [showMobileFadeRight, setShowMobileFadeRight] = useState(false);
   const effectiveActiveFilter = filterChips.includes(activeFilter) ? activeFilter : (filterChips[0] ?? premieresFilter);
 
   useEffect(() => {
@@ -84,6 +87,34 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isDesktopFilterOpen]);
+
+  useEffect(() => {
+    const node = mobileFiltersRef.current;
+    if (!node) {
+      return;
+    }
+
+    const updateFadeState = () => {
+      const maxScroll = node.scrollWidth - node.clientWidth;
+      const hasOverflow = maxScroll > 1;
+      setShowMobileFadeLeft(hasOverflow && node.scrollLeft > 1);
+      setShowMobileFadeRight(hasOverflow && node.scrollLeft < maxScroll - 1);
+    };
+
+    updateFadeState();
+
+    node.addEventListener("scroll", updateFadeState, { passive: true });
+    window.addEventListener("resize", updateFadeState);
+
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateFadeState) : null;
+    observer?.observe(node);
+
+    return () => {
+      node.removeEventListener("scroll", updateFadeState);
+      window.removeEventListener("resize", updateFadeState);
+      observer?.disconnect();
+    };
+  }, [filterChips.length]);
 
   const filteredMovies = useMemo(() => {
     if (effectiveActiveFilter === premieresFilter) {
@@ -191,16 +222,8 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       </div>
 
       <div className="mt-4 lg:hidden">
-        <div className="relative">
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10"
-            style={{ background: "linear-gradient(to right, var(--color-background) 30%, rgba(11, 18, 32, 0))" }}
-          />
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10"
-            style={{ background: "linear-gradient(to left, var(--color-background) 30%, rgba(11, 18, 32, 0))" }}
-          />
-          <div className="hide-scrollbar flex touch-pan-x gap-2 overflow-x-auto px-2 pb-2">
+        <div className={`edge-fade-x ${showMobileFadeLeft ? "edge-fade-left" : ""} ${showMobileFadeRight ? "edge-fade-right" : ""}`}>
+          <div ref={mobileFiltersRef} className="hide-scrollbar flex touch-pan-x gap-2 overflow-x-auto px-2 pb-2">
             {filterChips.map((filter) => (
               <button
                 key={filter}
@@ -274,11 +297,11 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
                     <p className="text-sm text-slate-300">{movie.genre}</p>
                   </div>
                   {movie.id ? (
-                    <Link
-                      href={`/movie/${movie.id}`}
-                      className="absolute inset-0 z-10"
-                      aria-label={`Открыть фильм ${movie.title}`}
-                    />
+                      <Link
+                        href={`/movies/${movie.id}`}
+                        className="absolute inset-0 z-10"
+                        aria-label={`Открыть фильм ${movie.title}`}
+                      />
                   ) : null}
                 </div>
               </div>

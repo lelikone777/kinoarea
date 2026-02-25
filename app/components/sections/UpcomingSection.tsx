@@ -53,7 +53,7 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
                 </div>
                 {movie.id ? (
                   <Link
-                    href={`/movie/${movie.id}`}
+                    href={`/movies/${movie.id}`}
                     className="absolute inset-0"
                     aria-label={`Открыть фильм ${movie.title}`}
                   />

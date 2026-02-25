@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -179,7 +179,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
                     <p className="text-base font-bold leading-6 text-white">{movie.title}</p>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-200">{movie.genre}</p>
                   </div>
-                  {movie.id ? <Link href={`/movie/${movie.id}`} className="absolute inset-0" aria-label={`Открыть фильм ${movie.title}`} /> : null}
+                  {movie.id ? <Link href={`/movies/${movie.id}`} className="absolute inset-0" aria-label={`Открыть фильм ${movie.title}`} /> : null}
                 </div>
               </div>
             </div>
@@ -252,3 +252,4 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     </section>
   );
 }
+

@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { navLinks } from "../data/content";
@@ -45,6 +45,7 @@ const TMDB_PAGE_SIZE = 20;
 const TMDB_MAX_PAGE = 500;
 
 export default function MoviesPage() {
+  const router = useRouter();
   const currentYear = new Date().getFullYear();
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -337,10 +338,18 @@ export default function MoviesPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {items.map((movie) => (
-            <Link
+            <article
               key={movie.id}
-              href={`/movies/${movie.id}`}
-              className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition hover:-translate-y-1"
+              role="link"
+              tabIndex={0}
+              onClick={() => router.push(`/movies/${movie.id}`)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  router.push(`/movies/${movie.id}`);
+                }
+              }}
+              className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition hover:-translate-y-1 hover:border-sky-300/40"
             >
               <div className="relative aspect-[2/3]">
                 <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
@@ -353,7 +362,7 @@ export default function MoviesPage() {
                 </p>
                 <p className="line-clamp-2 text-xs text-slate-400">{movie.overview || "Описание отсутствует."}</p>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
 
@@ -374,3 +383,4 @@ export default function MoviesPage() {
     </div>
   );
 }
+

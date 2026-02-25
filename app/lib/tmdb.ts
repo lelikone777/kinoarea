@@ -1,13 +1,12 @@
-import type { Movie, Person, Trailer } from "../data/content";
+﻿import type { Movie, Person, Trailer } from "../data/content";
 import type { TrailerHero } from "../components/sections/TrailersSection";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const FALLBACK_POSTER =
-  "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=500&q=80";
-const FALLBACK_BACKDROP =
-  "https://images.unsplash.com/photo-1463107971871-fbac9ddb920f?auto=format&fit=crop&w=1280&q=80";
-const FALLBACK_AVATAR =
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=2&w=120&h=120&q=80";
+const FALLBACK_POSTER = "/placeholders/poster.svg";
+const FALLBACK_BACKDROP = "/placeholders/backdrop.svg";
+const FALLBACK_AVATAR = "/placeholders/avatar.svg";
+const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "0.0.0.0", "::"]);
+let tmdbReachablePromise: Promise<boolean> | null = null;
 
 type TmdbConfigResponse = {
   images: {
@@ -93,6 +92,31 @@ type TmdbVideosResponse = {
   results: TmdbVideo[];
 };
 
+function isLoopbackAddress(address: string) {
+  return LOOPBACK_ADDRESSES.has(address) || address.startsWith("127.");
+}
+
+export async function isTmdbReachable(): Promise<boolean> {
+  if (tmdbReachablePromise) {
+    return tmdbReachablePromise;
+  }
+
+  tmdbReachablePromise = (async () => {
+    try {
+      const { lookup } = await import("node:dns/promises");
+      const records = await lookup("api.themoviedb.org", { all: true, verbatim: true });
+      if (!records.length) {
+        return false;
+      }
+      return records.some((record) => !isLoopbackAddress(record.address));
+    } catch {
+      return false;
+    }
+  })();
+
+  return tmdbReachablePromise;
+}
+
 function resolveTmdbAuth() {
   const token = process.env.TMDB_ACCESS_TOKEN?.trim();
   const apiKey = process.env.TMDB_API_KEY?.trim();
@@ -141,6 +165,11 @@ async function tmdbFetch<T>(
   params: Record<string, string | number | undefined> = {},
   revalidateSeconds = 60 * 10
 ): Promise<T> {
+  const reachable = await isTmdbReachable();
+  if (!reachable) {
+    throw new Error("TMDB network error: DNS/proxy resolves TMDB API to localhost.");
+  }
+
   const auth = resolveTmdbAuth();
   const url = new URL(`${TMDB_BASE_URL}${path}`);
   if (auth.apiKey) {
@@ -394,6 +423,8 @@ export async function getWeeklyTrailers(limit = 6): Promise<Trailer[]> {
       title: video.name || movie.title,
       time: video.type || "Трейлер",
       note: video.official ? "Официальный" : undefined,
+      movieId: movie.id,
+      trailerKey: video.key,
       image: imagePath ? `${ctx.base}${ctx.backdropSize}${imagePath}` : FALLBACK_BACKDROP,
     });
   }
@@ -456,6 +487,8 @@ export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
       image: imagePath ? `${ctx.base}${ctx.backdropSize}${imagePath}` : FALLBACK_BACKDROP,
       duration,
       tag: "Трейлер недели",
+      movieId: movie.id,
+      trailerKey: video.key,
       actors,
     };
   }
@@ -761,3 +794,4 @@ export async function getPopularPeople(limit = 10, page = 1): Promise<Person[]> 
     };
   });
 }
+

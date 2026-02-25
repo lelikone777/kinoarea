@@ -1,4 +1,4 @@
-import {
+﻿import {
   navLinks,
   nowFilters,
   nowPlaying,
@@ -18,6 +18,7 @@ import {
   getWeeklyTrailers,
   getFeaturedTrailerHero,
   getPopularPeople,
+  isTmdbReachable,
 } from "./lib/tmdb";
 import { Footer } from "./components/layout/Footer";
 import { Header } from "./components/layout/Header";
@@ -32,6 +33,7 @@ import { UpcomingSection } from "./components/sections/UpcomingSection";
 
 export default async function Home() {
   const hasTmdbAuth = Boolean(process.env.TMDB_ACCESS_TOKEN || process.env.TMDB_API_KEY);
+  const canUseTmdb = hasTmdbAuth ? await isTmdbReachable() : false;
 
   const [
     popular,
@@ -43,14 +45,14 @@ export default async function Home() {
     peopleMonth,
     peopleYear,
   ] = await Promise.all([
-    hasTmdbAuth ? getPopularMovies(60).catch(() => popularMovies) : Promise.resolve(popularMovies),
-    hasTmdbAuth ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
-    hasTmdbAuth ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
-    hasTmdbAuth ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
-    hasTmdbAuth ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
-    hasTmdbAuth ? getPopularPeople(10, 1).catch(() => null) : Promise.resolve(null),
-    hasTmdbAuth ? getPopularPeople(10, 2).catch(() => null) : Promise.resolve(null),
-    hasTmdbAuth ? getPopularPeople(10, 3).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularMovies(60).catch(() => popularMovies) : Promise.resolve(popularMovies),
+    canUseTmdb ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
+    canUseTmdb ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
+    canUseTmdb ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
+    canUseTmdb ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularPeople(10, 1).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularPeople(10, 2).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularPeople(10, 3).catch(() => null) : Promise.resolve(null),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
@@ -61,7 +63,7 @@ export default async function Home() {
       ? popular.slice(0, 60)
       : [...Array(60)].map((_, i) => popular[i % popular.length]);
   const fallbackAvatar =
-    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80";
+    "/placeholders/avatar.svg";
   const fallbackPeopleWeek = [
     ...peopleSpotlight,
     ...peopleBoard.map((p) => ({
@@ -98,3 +100,4 @@ export default async function Home() {
     </div>
   );
 }
+

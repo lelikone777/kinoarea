@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -97,3 +97,4 @@ export function StyledSelect({ value, onChange, options, placeholder }: StyledSe
     </div>
   );
 }
+

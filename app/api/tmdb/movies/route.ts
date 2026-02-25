@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { getCatalogMovies, getMovieGenres } from "../../../lib/tmdb";
+﻿import { NextResponse } from "next/server";
+import { getCatalogMovies, getMovieGenres, isTmdbReachable } from "../../../lib/tmdb";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,6 +18,11 @@ export async function GET(request: Request) {
       : "popularity.desc";
 
   try {
+    const tmdbAvailable = await isTmdbReachable();
+    if (!tmdbAvailable) {
+      return NextResponse.json({ error: "TMDB недоступен: DNS резолвит API в localhost." }, { status: 503 });
+    }
+
     const [movies, genres] = await Promise.all([
       getCatalogMovies({
         query,
@@ -35,3 +40,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
