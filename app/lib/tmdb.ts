@@ -23,6 +23,7 @@ type TmdbMovie = {
   title: string;
   overview: string;
   vote_average: number;
+  runtime?: number;
   release_date?: string;
   poster_path: string | null;
   backdrop_path: string | null;
@@ -139,10 +140,12 @@ function mapMovie(movie: TmdbMovie, ctx: Awaited<ReturnType<typeof getAssetsCont
   const year = movie.release_date ? new Date(movie.release_date).getFullYear() : undefined;
 
   return {
+    id: movie.id,
     title: movie.title,
     genre: genreNames || (year ? `Премьера ${year}` : "Фильм"),
     rating: Number(movie.vote_average?.toFixed(1)) || 0,
     tag,
+    year,
     image: movie.poster_path ? `${ctx.base}${ctx.posterSize}${movie.poster_path}` : FALLBACK_POSTER,
   };
 }
@@ -259,7 +262,7 @@ export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
     if (!video) continue;
 
     const imagePath = details.backdrop_path ?? details.poster_path;
-    const durationMinutes = details.runtime;
+    const durationMinutes = details.runtime ?? movie.runtime;
     const duration =
       typeof durationMinutes === "number" && durationMinutes > 0
         ? `${Math.floor(durationMinutes / 60)}:${String(durationMinutes % 60).padStart(2, "0")}`
@@ -287,6 +290,299 @@ export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
   }
 
   return null;
+}
+
+type TmdbMovieImage = {
+  file_path: string;
+  width: number;
+  height: number;
+  vote_average: number;
+};
+
+type TmdbMovieDetails = TmdbMovie & {
+  original_title?: string;
+  original_language?: string;
+  tagline?: string;
+  status?: string;
+  homepage?: string;
+  imdb_id?: string;
+  popularity?: number;
+  vote_count?: number;
+  budget?: number;
+  revenue?: number;
+  adult?: boolean;
+  video?: boolean;
+  genres?: { id: number; name: string }[];
+  production_companies?: { id: number; name: string; origin_country?: string; logo_path?: string | null }[];
+  production_countries?: { iso_3166_1: string; name: string }[];
+  spoken_languages?: { iso_639_1: string; english_name: string; name: string }[];
+  belongs_to_collection?: { id: number; name: string; poster_path?: string | null; backdrop_path?: string | null } | null;
+  credits?: {
+    cast?: {
+      id: number;
+      name: string;
+      character?: string;
+      profile_path?: string | null;
+      order?: number;
+    }[];
+    crew?: {
+      id: number;
+      name: string;
+      job?: string;
+      department?: string;
+      profile_path?: string | null;
+    }[];
+  };
+  videos?: TmdbVideosResponse;
+  images?: {
+    backdrops?: TmdbMovieImage[];
+    posters?: TmdbMovieImage[];
+    logos?: TmdbMovieImage[];
+  };
+  keywords?: { keywords?: { id: number; name: string }[] };
+  recommendations?: { results: TmdbMovie[] };
+  similar?: { results: TmdbMovie[] };
+  reviews?: {
+    results: {
+      id: string;
+      author: string;
+      content: string;
+      created_at?: string;
+      url?: string;
+      author_details?: {
+        name?: string;
+        username?: string;
+        avatar_path?: string | null;
+        rating?: number | null;
+      };
+    }[];
+  };
+  "watch/providers"?: {
+    results?: Record<
+      string,
+      {
+        link?: string;
+        flatrate?: { provider_id: number; provider_name: string; logo_path?: string | null }[];
+        rent?: { provider_id: number; provider_name: string; logo_path?: string | null }[];
+        buy?: { provider_id: number; provider_name: string; logo_path?: string | null }[];
+      }
+    >;
+  };
+  release_dates?: {
+    results?: {
+      iso_3166_1: string;
+      release_dates: {
+        certification?: string;
+        iso_639_1?: string;
+        note?: string;
+        release_date: string;
+        type: number;
+      }[];
+    }[];
+  };
+  external_ids?: {
+    imdb_id?: string | null;
+    wikidata_id?: string | null;
+    facebook_id?: string | null;
+    instagram_id?: string | null;
+    twitter_id?: string | null;
+  };
+};
+
+export type MovieFullDetails = {
+  id: number;
+  title: string;
+  originalTitle?: string;
+  overview: string;
+  tagline?: string;
+  poster: string;
+  backdrop: string;
+  releaseDate?: string;
+  year?: number;
+  runtime?: number;
+  status?: string;
+  originalLanguage?: string;
+  popularity?: number;
+  voteAverage: number;
+  voteCount?: number;
+  budget?: number;
+  revenue?: number;
+  adult?: boolean;
+  video?: boolean;
+  homepage?: string;
+  imdbId?: string;
+  genres: { id: number; name: string }[];
+  productionCompanies: { id: number; name: string; originCountry?: string; logo?: string | null }[];
+  productionCountries: { code: string; name: string }[];
+  spokenLanguages: { code: string; englishName: string; name: string }[];
+  collection?: { id: number; name: string; poster?: string | null; backdrop?: string | null } | null;
+  cast: { id: number; name: string; character?: string; profile?: string }[];
+  crew: { id: number; name: string; job?: string; department?: string; profile?: string }[];
+  trailers: { key: string; name: string; type: string; official: boolean; publishedAt?: string }[];
+  videos: { key: string; name: string; type: string; site: string; official: boolean; publishedAt?: string }[];
+  backdrops: string[];
+  posters: string[];
+  logos: string[];
+  keywords: string[];
+  recommendations: Movie[];
+  similar: Movie[];
+  reviews: { id: string; author: string; content: string; createdAt?: string; url?: string; rating?: number | null }[];
+  providersByRegion: {
+    region: string;
+    link?: string;
+    flatrate: string[];
+    rent: string[];
+    buy: string[];
+  }[];
+  releaseDates: { region: string; certification?: string; releaseDate: string; type: number }[];
+  externalIds?: {
+    imdbId?: string | null;
+    wikidataId?: string | null;
+    facebookId?: string | null;
+    instagramId?: string | null;
+    twitterId?: string | null;
+  };
+  raw: TmdbMovieDetails;
+};
+
+export async function getMovieFullDetails(movieId: number): Promise<MovieFullDetails> {
+  const ctx = await getAssetsContext();
+  const details = await tmdbFetch<TmdbMovieDetails>(
+    `/movie/${movieId}`,
+    {
+      language: "ru-RU",
+      append_to_response:
+        "credits,videos,images,keywords,recommendations,similar,reviews,watch/providers,release_dates,external_ids",
+      include_image_language: "ru,en,null",
+      include_video_language: "ru-RU,en-US",
+    },
+    60 * 30
+  );
+
+  const img = (path?: string | null, size?: string) =>
+    path ? `${ctx.base}${size ?? ctx.posterSize}${path}` : undefined;
+
+  const recommendations = (details.recommendations?.results ?? [])
+    .slice(0, 12)
+    .map((movie) => mapMovie(movie, ctx, "Рекомендации"));
+  const similar = (details.similar?.results ?? []).slice(0, 12).map((movie) => mapMovie(movie, ctx, "Похожее"));
+
+  const videoItems = (details.videos?.results ?? [])
+    .filter((video) => video.site === "YouTube")
+    .map((video) => ({
+      key: video.key,
+      name: video.name,
+      type: video.type,
+      site: video.site,
+      official: video.official,
+      publishedAt: video.published_at,
+    }));
+
+  const providersByRegion = Object.entries(details["watch/providers"]?.results ?? {}).map(([region, data]) => ({
+    region,
+    link: data.link,
+    flatrate: (data.flatrate ?? []).map((provider) => provider.provider_name),
+    rent: (data.rent ?? []).map((provider) => provider.provider_name),
+    buy: (data.buy ?? []).map((provider) => provider.provider_name),
+  }));
+
+  const releaseDates = (details.release_dates?.results ?? []).flatMap((entry) =>
+    entry.release_dates.map((release) => ({
+      region: entry.iso_3166_1,
+      certification: release.certification || undefined,
+      releaseDate: release.release_date,
+      type: release.type,
+    }))
+  );
+
+  return {
+    id: details.id,
+    title: details.title,
+    originalTitle: details.original_title || undefined,
+    overview: details.overview || "",
+    tagline: details.tagline || undefined,
+    poster: img(details.poster_path, ctx.posterSize) ?? FALLBACK_POSTER,
+    backdrop: img(details.backdrop_path, ctx.backdropSize) ?? FALLBACK_BACKDROP,
+    releaseDate: details.release_date,
+    year: details.release_date ? new Date(details.release_date).getFullYear() : undefined,
+    runtime: details.runtime,
+    status: details.status,
+    originalLanguage: details.original_language,
+    popularity: details.popularity,
+    voteAverage: details.vote_average ?? 0,
+    voteCount: details.vote_count,
+    budget: details.budget,
+    revenue: details.revenue,
+    adult: details.adult,
+    video: details.video,
+    homepage: details.homepage || undefined,
+    imdbId: details.imdb_id || undefined,
+    genres: details.genres ?? [],
+    productionCompanies: (details.production_companies ?? []).map((company) => ({
+      id: company.id,
+      name: company.name,
+      originCountry: company.origin_country || undefined,
+      logo: img(company.logo_path ?? null, ctx.profileSize),
+    })),
+    productionCountries: (details.production_countries ?? []).map((country) => ({
+      code: country.iso_3166_1,
+      name: country.name,
+    })),
+    spokenLanguages: (details.spoken_languages ?? []).map((lang) => ({
+      code: lang.iso_639_1,
+      englishName: lang.english_name,
+      name: lang.name,
+    })),
+    collection: details.belongs_to_collection
+      ? {
+          id: details.belongs_to_collection.id,
+          name: details.belongs_to_collection.name,
+          poster: img(details.belongs_to_collection.poster_path ?? null, ctx.posterSize),
+          backdrop: img(details.belongs_to_collection.backdrop_path ?? null, ctx.backdropSize),
+        }
+      : null,
+    cast: (details.credits?.cast ?? []).slice(0, 24).map((actor) => ({
+      id: actor.id,
+      name: actor.name,
+      character: actor.character,
+      profile: img(actor.profile_path ?? null, ctx.profileSize) ?? FALLBACK_AVATAR,
+    })),
+    crew: (details.credits?.crew ?? []).slice(0, 24).map((member) => ({
+      id: member.id,
+      name: member.name,
+      job: member.job,
+      department: member.department,
+      profile: img(member.profile_path ?? null, ctx.profileSize) ?? FALLBACK_AVATAR,
+    })),
+    trailers: videoItems.filter((video) => video.type === "Trailer" || video.type === "Teaser"),
+    videos: videoItems,
+    backdrops: (details.images?.backdrops ?? []).slice(0, 24).map((image) => `${ctx.base}${ctx.backdropSize}${image.file_path}`),
+    posters: (details.images?.posters ?? []).slice(0, 24).map((image) => `${ctx.base}${ctx.posterSize}${image.file_path}`),
+    logos: (details.images?.logos ?? []).slice(0, 24).map((image) => `${ctx.base}${ctx.profileSize}${image.file_path}`),
+    keywords: (details.keywords?.keywords ?? []).map((keyword) => keyword.name),
+    recommendations,
+    similar,
+    reviews: (details.reviews?.results ?? []).slice(0, 10).map((review) => ({
+      id: review.id,
+      author: review.author,
+      content: review.content,
+      createdAt: review.created_at,
+      url: review.url,
+      rating: review.author_details?.rating ?? null,
+    })),
+    providersByRegion,
+    releaseDates,
+    externalIds: details.external_ids
+      ? {
+          imdbId: details.external_ids.imdb_id,
+          wikidataId: details.external_ids.wikidata_id,
+          facebookId: details.external_ids.facebook_id,
+          instagramId: details.external_ids.instagram_id,
+          twitterId: details.external_ids.twitter_id,
+        }
+      : undefined,
+    raw: details,
+  };
 }
 
 type TmdbPerson = {

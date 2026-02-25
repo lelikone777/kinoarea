@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
 
@@ -11,11 +11,12 @@ type PopularMoviesProps = {
 };
 
 const CARDS_PER_PAGE = 4;
-const YEAR_RANGE = 40; // сколько лет назад можно листать по умолчанию
+const YEAR_RANGE = 40;
 
 export function PopularMovies({ movies }: PopularMoviesProps) {
-  const scrollYearsRef = useRef<HTMLDivElement | null>(null);
+  const yearsRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
+
   const [selectedYear, setSelectedYear] = useState<number | "all">("all");
   const [page, setPage] = useState(1);
   const [moviesState, setMoviesState] = useState<Movie[]>(movies);
@@ -27,59 +28,71 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
 
   const years = useMemo(() => {
     const set = new Set<number>();
-    moviesState.forEach((m) => {
-      if (m.year) set.add(m.year);
+    moviesState.forEach((movie) => {
+      if (movie.year) set.add(movie.year);
     });
     if (set.size === 0) {
       const current = new Date().getFullYear();
-      return Array.from({ length: YEAR_RANGE }, (_, i) => current - i);
+      return Array.from({ length: YEAR_RANGE }, (_, index) => current - index);
     }
     return Array.from(set).sort((a, b) => b - a);
   }, [moviesState]);
 
   const filtered = useMemo(() => {
     if (selectedYear === "all") return moviesState;
-    const pool = moviesState.filter((m) => m.year === selectedYear);
-    return pool.length ? pool : moviesState;
+    const list = moviesState.filter((movie) => movie.year === selectedYear);
+    return list.length ? list : moviesState;
   }, [moviesState, selectedYear]);
 
   useEffect(() => {
-    setPage((prev) => Math.min(prev, Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE))));
-  }, [filtered.length]);
+    const node = trackRef.current;
+    if (!node) return;
+    const handleScroll = () => {
+      const step = node.clientWidth || 1;
+      const nextPage = Math.max(1, Math.round(node.scrollLeft / step) + 1);
+      setPage(nextPage);
+    };
+    node.addEventListener("scroll", handleScroll, { passive: true });
+    return () => node.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
 
-  const goToPage = (p: number) => {
-    const clamped = Math.min(Math.max(1, p), totalPages);
-    setPage(clamped);
+  useEffect(() => {
+    setPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  const scrollByStep = (direction: "prev" | "next") => {
     const node = trackRef.current;
     if (!node) return;
     const step = node.clientWidth || 0;
-    node.scrollTo({ left: (clamped - 1) * step, behavior: "smooth" });
+    node.scrollBy({ left: direction === "next" ? step : -step, behavior: "smooth" });
   };
 
-  const scrollYears = (dir: "prev" | "next") => {
-    const node = scrollYearsRef.current;
+  const scrollYears = (direction: "prev" | "next") => {
+    const node = yearsRef.current;
     if (!node) return;
-    const delta = dir === "prev" ? -120 : 120;
-    node.scrollBy({ left: delta, behavior: "smooth" });
+    node.scrollBy({ left: direction === "next" ? 120 : -120, behavior: "smooth" });
   };
 
   const handleYearSelect = async (year: number | "all") => {
     setSelectedYear(year);
     setPage(1);
+
     if (year === "all") {
       setMoviesState(movies);
       trackRef.current?.scrollTo({ left: 0, behavior: "smooth" });
       return;
     }
+
     setIsLoadingYear(true);
     try {
-      const res = await fetch(`/api/popular-movies?year=${year}&limit=40`);
-      if (!res.ok) throw new Error("year load failed");
-      const data = (await res.json()) as { movies: Movie[] };
-      setMoviesState(data.movies);
+      const response = await fetch(`/api/popular-movies?year=${year}&limit=40`);
+      if (!response.ok) throw new Error("Failed to fetch movies by year");
+      const data = (await response.json()) as { movies: Movie[] };
+      const payload = Array.isArray(data.movies) ? data.movies : [];
+      setMoviesState(payload.length ? payload : movies);
     } catch {
       setMoviesState(movies);
     } finally {
@@ -111,20 +124,16 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
             >
               ←
             </button>
-            <div
-              ref={scrollYearsRef}
-              data-year-scroll
-              className="flex max-w-[260px] items-center gap-2 overflow-x-auto pr-1"
-            >
-              {years.map((y) => (
+            <div ref={yearsRef} data-year-scroll className="flex max-w-[260px] items-center gap-2 overflow-x-auto pr-1">
+              {years.map((year) => (
                 <button
-                  key={y}
-                  onClick={() => handleYearSelect(y)}
+                  key={year}
+                  onClick={() => handleYearSelect(year)}
                   className={`whitespace-nowrap rounded-full px-2 py-1 transition ${
-                    selectedYear === y ? "bg-white/10 text-white ring-1 ring-white/10" : "hover:text-white"
+                    selectedYear === year ? "bg-white/10 text-white ring-1 ring-white/10" : "hover:text-white"
                   }`}
                 >
-                  {y}
+                  {year}
                 </button>
               ))}
             </div>
@@ -139,16 +148,13 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
       </div>
 
       <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-slate-900/60 p-4 shadow-xl shadow-indigo-500/15">
-        <div className="absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none" />
-        <div
-          ref={trackRef}
-          className="flex gap-4 overflow-x-auto scroll-smooth pr-4"
-        >
-          {filtered.map((movie) => (
+        <div className="absolute left-0 top-0 h-full w-16 pointer-events-none bg-gradient-to-r from-slate-950 to-transparent" />
+        <div className="absolute right-0 top-0 h-full w-16 pointer-events-none bg-gradient-to-l from-slate-950 to-transparent" />
+        <div ref={trackRef} data-main-scroll className="flex gap-4 overflow-x-auto scroll-smooth pr-4">
+          {filtered.map((movie, index) => (
             <div
-              key={movie.title + movie.year}
-              className="min-w-[240px] max-w-[260px] flex-1 sm:min-w-[260px] lg:min-w-[260px]"
+              key={`${movie.id ?? movie.title}-${movie.year ?? "na"}-${index}`}
+              className={`min-w-[240px] max-w-[260px] flex-1 sm:min-w-[260px] ${movie.id ? "cursor-pointer" : ""}`}
             >
               <div className="group relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-1 hover:border-white/20">
                 <div className="relative aspect-[2/3]">
@@ -171,10 +177,9 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
                   </span>
                   <div className="absolute inset-x-3 bottom-3 space-y-2">
                     <p className="text-base font-bold leading-6 text-white">{movie.title}</p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-200">
-                      {movie.genre}
-                    </p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-200">{movie.genre}</p>
                   </div>
+                  {movie.id ? <Link href={`/movie/${movie.id}`} className="absolute inset-0" aria-label={`Открыть фильм ${movie.title}`} /> : null}
                 </div>
               </div>
             </div>
@@ -184,18 +189,18 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
         <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-300">
           <button
             className="rounded-full bg-white/5 px-3 py-1 transition hover:bg-white/10 disabled:opacity-40"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
+            onClick={() => scrollByStep("prev")}
+            disabled={currentPage <= 1}
           >
             ←
           </button>
           <span>
-            {currentPage}/{Math.max(1, totalPages)}
+            {currentPage}/{totalPages}
           </span>
           <button
             className="rounded-full bg-white/5 px-3 py-1 transition hover:bg-white/10 disabled:opacity-40"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
+            onClick={() => scrollByStep("next")}
+            disabled={currentPage >= totalPages}
           >
             →
           </button>
@@ -203,7 +208,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
 
         {isLoadingYear ? (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 text-sm text-white backdrop-blur-sm">
-            Загружаем фильмы…
+            Загружаем фильмы...
           </div>
         ) : null}
       </div>
@@ -226,6 +231,21 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           border: 1px solid rgba(255, 255, 255, 0.35);
         }
         [data-year-scroll]::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(90deg, #22d3ee, #818cf8);
+        }
+        [data-main-scroll]::-webkit-scrollbar {
+          height: 10px;
+        }
+        [data-main-scroll]::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.04);
+          border-radius: 9999px;
+        }
+        [data-main-scroll]::-webkit-scrollbar-thumb {
+          background: linear-gradient(90deg, #38bdf8, #6366f1);
+          border-radius: 9999px;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+        [data-main-scroll]::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(90deg, #22d3ee, #818cf8);
         }
       `}</style>

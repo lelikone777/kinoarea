@@ -31,7 +31,7 @@ import { TrailersSection } from "./components/sections/TrailersSection";
 import { UpcomingSection } from "./components/sections/UpcomingSection";
 
 export default async function Home() {
-  const hasTmdbToken = Boolean(process.env.TMDB_ACCESS_TOKEN);
+  const hasTmdbAuth = Boolean(process.env.TMDB_ACCESS_TOKEN || process.env.TMDB_API_KEY);
 
   const [
     popular,
@@ -43,14 +43,14 @@ export default async function Home() {
     peopleMonth,
     peopleYear,
   ] = await Promise.all([
-    hasTmdbToken ? getPopularMovies(60).catch(() => popularMovies) : Promise.resolve(popularMovies),
-    hasTmdbToken ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
-    hasTmdbToken ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
-    hasTmdbToken ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
-    hasTmdbToken ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
-    hasTmdbToken ? getPopularPeople(10, 1).catch(() => null) : Promise.resolve(null),
-    hasTmdbToken ? getPopularPeople(10, 2).catch(() => null) : Promise.resolve(null),
-    hasTmdbToken ? getPopularPeople(10, 3).catch(() => null) : Promise.resolve(null),
+    hasTmdbAuth ? getPopularMovies(60).catch(() => popularMovies) : Promise.resolve(popularMovies),
+    hasTmdbAuth ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
+    hasTmdbAuth ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
+    hasTmdbAuth ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
+    hasTmdbAuth ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
+    hasTmdbAuth ? getPopularPeople(10, 1).catch(() => null) : Promise.resolve(null),
+    hasTmdbAuth ? getPopularPeople(10, 2).catch(() => null) : Promise.resolve(null),
+    hasTmdbAuth ? getPopularPeople(10, 3).catch(() => null) : Promise.resolve(null),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);

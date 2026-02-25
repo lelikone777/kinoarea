@@ -16,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body
+        suppressHydrationWarning
         style={{
           ["--font-main" as string]:
             '"Manrope", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif',
