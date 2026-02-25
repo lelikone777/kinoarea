@@ -112,6 +112,28 @@ function resolveTmdbAuth() {
   throw new Error("TMDB credentials are not set. Provide TMDB_ACCESS_TOKEN or TMDB_API_KEY.");
 }
 
+function getTmdbNetworkHint(error: unknown): string | null {
+  const cause = (
+    error as {
+      cause?: {
+        code?: string;
+        address?: string;
+        port?: number;
+      };
+    }
+  )?.cause;
+
+  if (
+    cause?.code === "ECONNREFUSED" &&
+    (cause.address === "127.0.0.1" || cause.address === "::1")
+  ) {
+    const port = cause.port ?? 443;
+    return `TMDB network error: DNS/proxy resolves TMDB to localhost (${cause.address}:${port}).`;
+  }
+
+  return null;
+}
+
 async function tmdbFetch<T>(
   path: string,
   params: Record<string, string | number | undefined> = {},
@@ -128,13 +150,22 @@ async function tmdbFetch<T>(
     }
   });
 
-  const res = await fetch(url.toString(), {
-    headers: {
-      Accept: "application/json",
-      ...auth.headers,
-    },
-    next: { revalidate: revalidateSeconds },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+        ...auth.headers,
+      },
+      next: { revalidate: revalidateSeconds },
+    });
+  } catch (error) {
+    const hint = getTmdbNetworkHint(error);
+    if (hint) {
+      throw new Error(hint, { cause: error as Error });
+    }
+    throw error;
+  }
 
   if (!res.ok) {
     throw new Error(`TMDB request failed (${res.status}): ${await res.text()}`);
