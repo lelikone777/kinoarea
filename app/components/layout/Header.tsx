@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
@@ -75,8 +76,8 @@ export function Header({ navLinks }: HeaderProps) {
               <MenuIcon className="h-5 w-5" />
             </button>
             <Link href="/" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 text-lg font-black text-slate-900 shadow-lg shadow-sky-500/30">
-                KA
+              <div className="relative h-12 w-12 overflow-hidden rounded-xl">
+                <Image src="/logo-kinoera.png" alt="Логотип КиноЭра" fill sizes="48px" className="object-cover" priority />
               </div>
               <div className="hidden sm:block">
                 <p className="text-lg font-bold">КиноЭра</p>
@@ -131,10 +132,10 @@ export function Header({ navLinks }: HeaderProps) {
           >
             <div className="flex items-center justify-between px-5 pt-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 text-sm font-black text-slate-900 shadow-lg shadow-sky-500/30">
-                  KA
+                <div className="relative h-10 w-10 overflow-hidden rounded-xl">
+                  <Image src="/logo-kinoera.png" alt="Логотип КиноЭра" fill sizes="40px" className="object-cover" priority />
                 </div>
-                <p className="text-base font-bold text-white">Kinoarea</p>
+                <p className="text-base font-bold text-white">КиноЭра</p>
               </div>
               <button
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
@@ -147,7 +148,7 @@ export function Header({ navLinks }: HeaderProps) {
             <div className="flex flex-1 items-center justify-center px-6 pb-8 pt-6">
               <div className="w-full max-w-sm max-h-[calc(100vh-140px)] overflow-y-auto rounded-3xl bg-slate-900/90 p-6 text-center shadow-2xl shadow-sky-500/20 ring-1 ring-white/10 backdrop-blur">
                 <div className="mb-6 flex flex-col items-center gap-2">
-                  <p className="text-lg font-bold text-white">Kinoarea</p>
+                  <p className="text-lg font-bold text-white">КиноЭра</p>
                   <p className="text-xs text-slate-400">медиа, фильмы и подборки</p>
                 </div>
                 <div className="flex flex-col items-center gap-3 pb-4 pt-2">
