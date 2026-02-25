@@ -125,16 +125,6 @@ export default async function MoviePage({ params }: MoviePageProps) {
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-              {movie.imdbId ? (
-                <a
-                  href={`https://www.imdb.com/title/${movie.imdbId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-white/15 px-3 py-1 hover:border-white/40"
-                >
-                  IMDb
-                </a>
-              ) : null}
               {movie.homepage ? (
                 <a href={movie.homepage} target="_blank" rel="noreferrer" className="rounded-full border border-white/15 px-3 py-1 hover:border-white/40">
                   Официальный сайт
@@ -354,3 +344,5 @@ export default async function MoviePage({ params }: MoviePageProps) {
     </div>
   );
 }
+
+

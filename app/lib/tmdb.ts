@@ -34,6 +34,43 @@ type TmdbGenreResponse = {
   genres: { id: number; name: string }[];
 };
 
+export type TmdbGenre = {
+  id: number;
+  name: string;
+};
+
+export type TmdbCatalogSortBy =
+  | "popularity.desc"
+  | "vote_average.desc"
+  | "release_date.desc"
+  | "revenue.desc";
+
+export type TmdbCatalogMovie = {
+  id: number;
+  title: string;
+  year?: number;
+  type: "movie";
+  poster: string;
+  rating: number;
+  overview: string;
+  genres: string[];
+};
+
+type CatalogMoviesInput = {
+  query?: string;
+  year?: number;
+  genreId?: number;
+  page?: number;
+  sortBy?: TmdbCatalogSortBy;
+};
+
+type CatalogMoviesResult = {
+  items: TmdbCatalogMovie[];
+  page: number;
+  totalPages: number;
+  totalResults: number;
+};
+
 type TmdbCastMember = {
   name: string;
   character?: string;
@@ -54,12 +91,25 @@ type TmdbVideosResponse = {
   results: TmdbVideo[];
 };
 
-function getAuthHeader() {
-  const token = process.env.TMDB_ACCESS_TOKEN;
-  if (!token) {
-    throw new Error("TMDB_ACCESS_TOKEN is not set in environment");
+function resolveTmdbAuth() {
+  const token = process.env.TMDB_ACCESS_TOKEN?.trim();
+  const apiKey = process.env.TMDB_API_KEY?.trim();
+
+  if (token) {
+    return {
+      headers: { Authorization: `Bearer ${token}` },
+      apiKey: undefined as string | undefined,
+    };
   }
-  return { Authorization: `Bearer ${token}` };
+
+  if (apiKey) {
+    return {
+      headers: {} as Record<string, string>,
+      apiKey,
+    };
+  }
+
+  throw new Error("TMDB credentials are not set. Provide TMDB_ACCESS_TOKEN or TMDB_API_KEY.");
 }
 
 async function tmdbFetch<T>(
@@ -67,7 +117,11 @@ async function tmdbFetch<T>(
   params: Record<string, string | number | undefined> = {},
   revalidateSeconds = 60 * 10
 ): Promise<T> {
+  const auth = resolveTmdbAuth();
   const url = new URL(`${TMDB_BASE_URL}${path}`);
+  if (auth.apiKey) {
+    url.searchParams.set("api_key", auth.apiKey);
+  }
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) {
       url.searchParams.set(key, String(value));
@@ -77,7 +131,7 @@ async function tmdbFetch<T>(
   const res = await fetch(url.toString(), {
     headers: {
       Accept: "application/json",
-      ...getAuthHeader(),
+      ...auth.headers,
     },
     next: { revalidate: revalidateSeconds },
   });
@@ -93,12 +147,17 @@ export async function getTmdbConfiguration() {
   return tmdbFetch<TmdbConfigResponse>("/configuration", {}, 60 * 60 * 24);
 }
 
-async function getGenresMap() {
+export async function getMovieGenres(): Promise<TmdbGenre[]> {
   const { genres } = await tmdbFetch<TmdbGenreResponse>(
     "/genre/movie/list",
     { language: "ru-RU" },
     60 * 60 * 24
   );
+  return genres;
+}
+
+async function getGenresMap() {
+  const genres = await getMovieGenres();
   return new Map(genres.map((genre) => [genre.id, genre.name]));
 }
 
@@ -147,6 +206,81 @@ function mapMovie(movie: TmdbMovie, ctx: Awaited<ReturnType<typeof getAssetsCont
     tag,
     year,
     image: movie.poster_path ? `${ctx.base}${ctx.posterSize}${movie.poster_path}` : FALLBACK_POSTER,
+  };
+}
+
+type TmdbPagedResponse<T> = {
+  page: number;
+  total_pages: number;
+  total_results: number;
+  results: T[];
+};
+
+function mapCatalogMovie(
+  movie: TmdbMovie,
+  ctx: Awaited<ReturnType<typeof getAssetsContext>>
+): TmdbCatalogMovie {
+  const year = movie.release_date ? new Date(movie.release_date).getFullYear() : undefined;
+  const genres = movie.genre_ids
+    .map((id) => ctx.genresMap.get(id))
+    .filter((name): name is string => Boolean(name));
+
+  return {
+    id: movie.id,
+    title: movie.title,
+    year,
+    type: "movie",
+    poster: movie.poster_path ? `${ctx.base}${ctx.posterSize}${movie.poster_path}` : FALLBACK_POSTER,
+    rating: Number(movie.vote_average?.toFixed(1)) || 0,
+    overview: movie.overview || "",
+    genres,
+  };
+}
+
+export async function getCatalogMovies(input: CatalogMoviesInput = {}): Promise<CatalogMoviesResult> {
+  const query = input.query?.trim() ?? "";
+  const page =
+    Number.isFinite(input.page) && Number(input.page) > 0
+      ? Math.min(Math.trunc(Number(input.page)), 500)
+      : 1;
+  const sortBy: TmdbCatalogSortBy = input.sortBy ?? "popularity.desc";
+  const year =
+    Number.isFinite(input.year) && Number(input.year) > 1800 ? Math.trunc(Number(input.year)) : undefined;
+  const genreId =
+    Number.isFinite(input.genreId) && Number(input.genreId) > 0
+      ? Math.trunc(Number(input.genreId))
+      : undefined;
+
+  const ctx = await getAssetsContext();
+  const isSearch = query.length > 0;
+  const params: Record<string, string | number | undefined> = {
+    language: "ru-RU",
+    page,
+    include_adult: "false",
+  };
+
+  let endpoint = "/discover/movie";
+  if (isSearch) {
+    endpoint = "/search/movie";
+    params.query = query;
+    params.primary_release_year = year;
+  } else {
+    params.sort_by = sortBy;
+    params.region = "RU";
+    params.primary_release_year = year;
+    params.with_genres = genreId;
+  }
+
+  const response = await tmdbFetch<TmdbPagedResponse<TmdbMovie>>(endpoint, params);
+  const filtered = isSearch && genreId
+    ? response.results.filter((movie) => movie.genre_ids.includes(genreId))
+    : response.results;
+
+  return {
+    items: filtered.map((movie) => mapCatalogMovie(movie, ctx)),
+    page: response.page ?? page,
+    totalPages: response.total_pages ?? 1,
+    totalResults: response.total_results ?? filtered.length,
   };
 }
 
@@ -305,7 +439,6 @@ type TmdbMovieDetails = TmdbMovie & {
   tagline?: string;
   status?: string;
   homepage?: string;
-  imdb_id?: string;
   popularity?: number;
   vote_count?: number;
   budget?: number;
@@ -380,13 +513,6 @@ type TmdbMovieDetails = TmdbMovie & {
       }[];
     }[];
   };
-  external_ids?: {
-    imdb_id?: string | null;
-    wikidata_id?: string | null;
-    facebook_id?: string | null;
-    instagram_id?: string | null;
-    twitter_id?: string | null;
-  };
 };
 
 export type MovieFullDetails = {
@@ -410,7 +536,6 @@ export type MovieFullDetails = {
   adult?: boolean;
   video?: boolean;
   homepage?: string;
-  imdbId?: string;
   genres: { id: number; name: string }[];
   productionCompanies: { id: number; name: string; originCountry?: string; logo?: string | null }[];
   productionCountries: { code: string; name: string }[];
@@ -435,13 +560,6 @@ export type MovieFullDetails = {
     buy: string[];
   }[];
   releaseDates: { region: string; certification?: string; releaseDate: string; type: number }[];
-  externalIds?: {
-    imdbId?: string | null;
-    wikidataId?: string | null;
-    facebookId?: string | null;
-    instagramId?: string | null;
-    twitterId?: string | null;
-  };
   raw: TmdbMovieDetails;
 };
 
@@ -452,7 +570,7 @@ export async function getMovieFullDetails(movieId: number): Promise<MovieFullDet
     {
       language: "ru-RU",
       append_to_response:
-        "credits,videos,images,keywords,recommendations,similar,reviews,watch/providers,release_dates,external_ids",
+        "credits,videos,images,keywords,recommendations,similar,reviews,watch/providers,release_dates",
       include_image_language: "ru,en,null",
       include_video_language: "ru-RU,en-US",
     },
@@ -516,7 +634,6 @@ export async function getMovieFullDetails(movieId: number): Promise<MovieFullDet
     adult: details.adult,
     video: details.video,
     homepage: details.homepage || undefined,
-    imdbId: details.imdb_id || undefined,
     genres: details.genres ?? [],
     productionCompanies: (details.production_companies ?? []).map((company) => ({
       id: company.id,
@@ -572,15 +689,6 @@ export async function getMovieFullDetails(movieId: number): Promise<MovieFullDet
     })),
     providersByRegion,
     releaseDates,
-    externalIds: details.external_ids
-      ? {
-          imdbId: details.external_ids.imdb_id,
-          wikidataId: details.external_ids.wikidata_id,
-          facebookId: details.external_ids.facebook_id,
-          instagramId: details.external_ids.instagram_id,
-          twitterId: details.external_ids.twitter_id,
-        }
-      : undefined,
     raw: details,
   };
 }

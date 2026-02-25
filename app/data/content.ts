@@ -1,4 +1,4 @@
-export type Movie = {
+﻿export type Movie = {
   id?: number;
   title: string;
   genre: string;
@@ -47,7 +47,7 @@ export type BoxOffice = {
 
 export const navLinks = [
   { label: "Главная", href: "/" },
-  { label: "Каталог IMDb", href: "/movies" },
+  { label: "Каталог TMDB", href: "/movies" },
   { label: "Премьеры", href: "#premieres" },
   { label: "Люди", href: "#people" },
   { label: "Новости", href: "#news" },
