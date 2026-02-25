@@ -45,12 +45,11 @@ export type BoxOffice = {
 };
 
 export const navLinks = [
-  "Афиша",
-  "Сеансы",
-  "Фильмы и сериалы",
-  "Премьеры",
-  "Люди",
-  "Новости",
+  { label: "Главная", href: "/" },
+  { label: "Каталог IMDb", href: "/movies" },
+  { label: "Премьеры", href: "#premieres" },
+  { label: "Люди", href: "#people" },
+  { label: "Новости", href: "#news" },
 ];
 
 export const nowFilters = [
