@@ -6,6 +6,10 @@
   tag?: string;
   badge?: string;
   year?: number;
+  releaseDate?: string;
+  popularity?: number;
+  voteCount?: number;
+  genreIds?: number[];
   image: string;
 };
 
@@ -54,11 +58,11 @@ export const navLinks = [
 ];
 
 export const nowFilters = [
-  "Все форматы",
-  "Ближайшие",
-  "Новинки недели",
-  "IMAX",
-  "4DX",
+  "Все фильмы",
+  "Премьеры 30 дней",
+  "Рейтинг 7+",
+  "Популярные",
+  "Боевики",
 ];
 
 export const nowPlaying: Movie[] = [

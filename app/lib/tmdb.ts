@@ -23,6 +23,8 @@ type TmdbMovie = {
   title: string;
   overview: string;
   vote_average: number;
+  vote_count?: number;
+  popularity?: number;
   runtime?: number;
   release_date?: string;
   poster_path: string | null;
@@ -236,6 +238,10 @@ function mapMovie(movie: TmdbMovie, ctx: Awaited<ReturnType<typeof getAssetsCont
     rating: Number(movie.vote_average?.toFixed(1)) || 0,
     tag,
     year,
+    releaseDate: movie.release_date,
+    popularity: movie.popularity,
+    voteCount: movie.vote_count,
+    genreIds: movie.genre_ids,
     image: movie.poster_path ? `${ctx.base}${ctx.posterSize}${movie.poster_path}` : FALLBACK_POSTER,
   };
 }
