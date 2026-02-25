@@ -2,6 +2,7 @@ export type Movie = {
   title: string;
   genre: string;
   rating: number;
+  year?: number;
   tag?: string;
   badge?: string;
   image: string;
