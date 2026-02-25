@@ -7,7 +7,7 @@ export function Footer() {
             KA
           </div>
           <div>
-            <p className="text-base font-bold text-white">КиноАреа</p>
+            <p className="text-base font-bold text-white">КиноЭра</p>
             <p className="text-xs text-slate-500">афиша, премьеры, билеты</p>
           </div>
         </div>
@@ -19,7 +19,7 @@ export function Footer() {
           <span>Вакансии</span>
         </div>
         <p className="text-xs text-slate-500">
-          (c) 2025 КиноАреа. Все права защищены.
+          (c) 2025 КиноЭра. Все права защищены.
         </p>
       </div>
     </footer>

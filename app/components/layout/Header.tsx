@@ -79,7 +79,7 @@ export function Header({ navLinks }: HeaderProps) {
                 KA
               </div>
               <div className="hidden sm:block">
-                <p className="text-lg font-bold">КиноАреа</p>
+                <p className="text-lg font-bold">КиноЭра</p>
                 <p className="text-xs text-slate-400">афиша и билеты</p>
               </div>
             </Link>
