@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
 import { CloseIcon, MenuIcon } from "../icons";
@@ -16,11 +17,21 @@ type HeaderProps = {
 };
 
 export function Header({ navLinks }: HeaderProps) {
+  const pathname = usePathname();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const scrollPositionRef = useRef(0);
 
   const closeNav = () => setIsMobileNavOpen(false);
   const openNav = () => setIsMobileNavOpen(true);
+  const isLinkActive = (href: string) => {
+    if (!href.startsWith("/")) {
+      return false;
+    }
+    if (href === "/") {
+      return pathname === "/";
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -91,7 +102,12 @@ export function Header({ navLinks }: HeaderProps) {
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-full px-3 py-1 transition hover:bg-white/5 hover:text-white"
+                aria-current={isLinkActive(item.href) ? "page" : undefined}
+                className={`rounded-full px-3 py-1 transition ${
+                  isLinkActive(item.href)
+                    ? "bg-sky-400 text-slate-950"
+                    : "hover:bg-white/5 hover:text-white"
+                }`}
               >
                 {item.label}
               </Link>
@@ -156,7 +172,12 @@ export function Header({ navLinks }: HeaderProps) {
                     <Link
                       key={link.label}
                       href={link.href}
-                      className="w-full rounded-2xl px-4 py-3 text-base font-semibold text-slate-100 transition hover:bg-white/10"
+                      aria-current={isLinkActive(link.href) ? "page" : undefined}
+                      className={`w-full rounded-2xl px-4 py-3 text-base font-semibold transition ${
+                        isLinkActive(link.href)
+                          ? "bg-sky-400 text-slate-950"
+                          : "text-slate-100 hover:bg-white/10"
+                      }`}
                       onClick={closeNav}
                     >
                       {link.label}

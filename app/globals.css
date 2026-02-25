@@ -41,3 +41,12 @@ a {
   background: #c4d6ff;
   color: #0b1220;
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

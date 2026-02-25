@@ -51,18 +51,15 @@ export type BoxOffice = {
 
 export const navLinks = [
   { label: "Главная", href: "/" },
-  { label: "Каталог TMDB", href: "/movies" },
+  { label: "Каталог", href: "/movies" },
   { label: "Премьеры", href: "#premieres" },
   { label: "Люди", href: "#people" },
   { label: "Новости", href: "#news" },
 ];
 
 export const nowFilters = [
-  "Все фильмы",
-  "Премьеры 30 дней",
-  "Рейтинг 7+",
+  "Премьеры",
   "Популярные",
-  "Боевики",
 ];
 
 export const nowPlaying: Movie[] = [

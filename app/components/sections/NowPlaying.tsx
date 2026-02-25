@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
 
@@ -12,17 +12,81 @@ type NowPlayingProps = {
 };
 
 export function NowPlaying({ movies, filters }: NowPlayingProps) {
-  const defaultFilter = filters[0] ?? "Все фильмы";
-  const [activeFilter, setActiveFilter] = useState(defaultFilter);
+  const premieresFilter = filters[0] ?? "Премьеры";
+  const popularFilter = filters[1] ?? "Популярные";
 
-  const [allFilter, freshFilter, ratedFilter, popularFilter, actionFilter] = filters;
+  const normalize = (value: string) => value.trim().toLocaleLowerCase();
 
-  const filteredMovies = useMemo(() => {
-    if (!activeFilter || activeFilter === allFilter) {
-      return movies;
+  const extractGenres = (movie: Movie): string[] => {
+    if (!movie.genre) {
+      return [];
+    }
+    if (movie.genre.includes("•")) {
+      return [movie.genre.split("•")[0]?.trim()].filter(Boolean) as string[];
+    }
+    return movie.genre
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+  };
+
+  const genreFilters = useMemo(() => {
+    const seen = new Set<string>();
+    const genres: string[] = [];
+    for (const movie of movies) {
+      for (const genre of extractGenres(movie)) {
+        const key = normalize(genre);
+        if (seen.has(key)) {
+          continue;
+        }
+        seen.add(key);
+        genres.push(genre);
+      }
+    }
+    return genres;
+  }, [movies]);
+
+  const filterChips = useMemo(
+    () => [premieresFilter, popularFilter, ...genreFilters],
+    [genreFilters, popularFilter, premieresFilter],
+  );
+
+  const [activeFilter, setActiveFilter] = useState(filterChips[0] ?? premieresFilter);
+  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
+  const desktopFilterRef = useRef<HTMLDivElement | null>(null);
+  const effectiveActiveFilter = filterChips.includes(activeFilter) ? activeFilter : (filterChips[0] ?? premieresFilter);
+
+  useEffect(() => {
+    if (!isDesktopFilterOpen) {
+      return;
     }
 
-    if (activeFilter === freshFilter) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!desktopFilterRef.current) {
+        return;
+      }
+      if (!desktopFilterRef.current.contains(event.target as Node)) {
+        setIsDesktopFilterOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsDesktopFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isDesktopFilterOpen]);
+
+  const filteredMovies = useMemo(() => {
+    if (effectiveActiveFilter === premieresFilter) {
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
       const releaseTimes = movies
         .map((movie) => (movie.releaseDate ? new Date(movie.releaseDate).getTime() : Number.NaN))
@@ -41,14 +105,14 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
         }
         return latestRelease >= releaseTime && latestRelease - releaseTime <= thirtyDaysMs;
       });
-      return fresh.length ? fresh : movies.slice(0, 6);
+      if (fresh.length) {
+        return fresh;
+      }
+      const byBadge = movies.filter((movie) => Boolean(movie.badge));
+      return byBadge.length ? byBadge : movies.slice(0, 6);
     }
 
-    if (activeFilter === ratedFilter) {
-      return movies.filter((movie) => movie.rating >= 7);
-    }
-
-    if (activeFilter === popularFilter) {
+    if (effectiveActiveFilter === popularFilter) {
       return [...movies].sort((a, b) => {
         const bScore = (b.popularity ?? 0) * 100 + (b.voteCount ?? 0) + b.rating * 10;
         const aScore = (a.popularity ?? 0) * 100 + (a.voteCount ?? 0) + a.rating * 10;
@@ -56,17 +120,10 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       });
     }
 
-    if (activeFilter === actionFilter) {
-      return movies.filter(
-        (movie) =>
-          movie.genreIds?.includes(28) ||
-          movie.genre.toLocaleLowerCase().includes("боевик") ||
-          movie.genre.toLocaleLowerCase().includes("action"),
-      );
-    }
-
-    return movies;
-  }, [actionFilter, activeFilter, allFilter, freshFilter, movies, popularFilter, ratedFilter]);
+    return movies.filter((movie) =>
+      extractGenres(movie).some((genre) => normalize(genre) === normalize(effectiveActiveFilter)),
+    );
+  }, [effectiveActiveFilter, movies, popularFilter, premieresFilter]);
 
   return (
     <section>
@@ -84,21 +141,82 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
         </button>
       </div>
 
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-        {filters.map((filter) => (
+      <div className="mt-4 hidden lg:flex">
+        <div ref={desktopFilterRef} className="relative w-full max-w-sm">
           <button
-            key={filter}
             type="button"
-            onClick={() => setActiveFilter(filter)}
-            className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
-              activeFilter === filter
-                ? "bg-sky-400 text-slate-950"
-                : "bg-white/5 text-slate-200 hover:bg-white/10"
-            }`}
+            onClick={() => setIsDesktopFilterOpen((prev) => !prev)}
+            aria-expanded={isDesktopFilterOpen}
+            aria-haspopup="listbox"
+            className="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-slate-900/80 px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-sky-300/50 hover:bg-slate-900"
           >
-            {filter}
+            <span>{effectiveActiveFilter}</span>
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className={`h-4 w-4 text-slate-300 transition ${isDesktopFilterOpen ? "rotate-180" : ""}`}
+            >
+              <path fill="currentColor" d="M6.7 8.8a1 1 0 0 1 1.4 0L12 12.7l3.9-3.9a1 1 0 1 1 1.4 1.4l-4.6 4.6a1 1 0 0 1-1.4 0L6.7 10.2a1 1 0 0 1 0-1.4Z" />
+            </svg>
           </button>
-        ))}
+
+          {isDesktopFilterOpen ? (
+            <div
+              role="listbox"
+              className="hide-scrollbar absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-72 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl shadow-sky-900/20 backdrop-blur"
+            >
+              {filterChips.map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => {
+                    setActiveFilter(filter);
+                    setIsDesktopFilterOpen(false);
+                  }}
+                  className={`mb-1 flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition last:mb-0 ${
+                    effectiveActiveFilter === filter
+                      ? "bg-sky-400 text-slate-950"
+                      : "text-slate-200 hover:bg-white/10"
+                  }`}
+                >
+                  <span>{filter}</span>
+                  {effectiveActiveFilter === filter ? (
+                    <span className="text-xs font-bold">Выбрано</span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-4 lg:hidden">
+        <div className="relative">
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10"
+            style={{ background: "linear-gradient(to right, var(--color-background) 30%, rgba(11, 18, 32, 0))" }}
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10"
+            style={{ background: "linear-gradient(to left, var(--color-background) 30%, rgba(11, 18, 32, 0))" }}
+          />
+          <div className="hide-scrollbar flex touch-pan-x gap-2 overflow-x-auto px-2 pb-2">
+            {filterChips.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setActiveFilter(filter)}
+                className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  effectiveActiveFilter === filter
+                    ? "bg-sky-400 text-slate-950"
+                    : "bg-white/5 text-slate-200 hover:bg-white/10"
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {filteredMovies.length === 0 ? (

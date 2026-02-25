@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { navLinks } from "../data/content";
+import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 
 type CatalogMovie = {
   id: number;
@@ -33,10 +34,10 @@ type MoviesApiResponse = {
 };
 
 const SORT_OPTIONS = [
-  { value: "popularity.desc", label: "Popular" },
-  { value: "vote_average.desc", label: "Top rated" },
-  { value: "release_date.desc", label: "Newest" },
-  { value: "revenue.desc", label: "Top grossing" },
+  { value: "popularity.desc", label: "Популярные" },
+  { value: "vote_average.desc", label: "С высоким рейтингом" },
+  { value: "release_date.desc", label: "Сначала новые" },
+  { value: "revenue.desc", label: "По кассовым сборам" },
 ] as const;
 
 export default function MoviesPage() {
@@ -59,6 +60,18 @@ export default function MoviesPage() {
     () => Array.from({ length: 80 }, (_, index) => String(currentYear - index)),
     [currentYear]
   );
+  const yearOptions = useMemo<StyledSelectOption[]>(
+    () => [{ value: "", label: "Любой год" }, ...years.map((value) => ({ value, label: value }))],
+    [years]
+  );
+  const genreOptions = useMemo<StyledSelectOption[]>(
+    () => [{ value: "", label: "Все жанры" }, ...genres.map((genre) => ({ value: String(genre.id), label: genre.name }))],
+    [genres]
+  );
+  const sortOptions = useMemo<StyledSelectOption[]>(
+    () => SORT_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+    []
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -78,7 +91,7 @@ export default function MoviesPage() {
         const response = await fetch(`/api/tmdb/movies?${params.toString()}`);
         const data = (await response.json()) as MoviesApiResponse;
         if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch TMDB catalog");
+          throw new Error(data.error || "Не удалось загрузить каталог TMDB");
         }
 
         if (!isMounted) return;
@@ -89,7 +102,7 @@ export default function MoviesPage() {
       } catch (loadError) {
         if (!isMounted) return;
         setItems([]);
-        setError(loadError instanceof Error ? loadError.message : "Failed to load movies");
+        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить фильмы");
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -110,9 +123,9 @@ export default function MoviesPage() {
 
       <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-5 pb-24 pt-10">
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold sm:text-4xl">TMDB Movie Catalog</h1>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог фильмов TMDB</h1>
           <p className="text-sm text-slate-300">
-            Search and filter movies using The Movie Database API.
+            Ищите и фильтруйте фильмы с помощью API The Movie Database.
           </p>
         </div>
 
@@ -127,67 +140,50 @@ export default function MoviesPage() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Movie title"
+            placeholder="Название фильма"
             className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
           />
 
-          <select
+          <StyledSelect
             value={year}
-            onChange={(event) => {
+            onChange={(nextValue) => {
               setPage(1);
-              setYear(event.target.value);
+              setYear(nextValue);
             }}
-            className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
-          >
-            <option value="">Any year</option>
-            {years.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
+            options={yearOptions}
+            placeholder="Любой год"
+          />
 
-          <select
+          <StyledSelect
             value={genreId}
-            onChange={(event) => {
+            onChange={(nextValue) => {
               setPage(1);
-              setGenreId(event.target.value);
+              setGenreId(nextValue);
             }}
-            className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
-          >
-            <option value="">All genres</option>
-            {genres.map((genre) => (
-              <option key={genre.id} value={String(genre.id)}>
-                {genre.name}
-              </option>
-            ))}
-          </select>
+            options={genreOptions}
+            placeholder="Все жанры"
+          />
 
-          <select
+          <StyledSelect
             value={sortBy}
-            onChange={(event) => {
+            onChange={(nextValue) => {
               setPage(1);
-              setSortBy(event.target.value as (typeof SORT_OPTIONS)[number]["value"]);
+              setSortBy(nextValue as (typeof SORT_OPTIONS)[number]["value"]);
             }}
-            className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={sortOptions}
+            placeholder="Сортировка"
+          />
 
           <button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900">
-            Search
+            Найти
           </button>
         </form>
 
         <div className="flex items-center justify-between text-sm text-slate-300">
           <p>
-            {isLoading ? "Loading..." : `${totalResults} results`}
+            {isLoading ? "Загрузка..." : `Найдено: ${totalResults}`}
           </p>
-          <p>Page {page} / {totalPages}</p>
+          <p>Страница {page} / {totalPages}</p>
         </div>
 
         {error ? (
@@ -199,8 +195,8 @@ export default function MoviesPage() {
         {!isLoading && !error && items.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 text-slate-300">
             {hasFilters
-              ? "No movies found for current filters."
-              : "No movies available right now."}
+              ? "По текущим фильтрам фильмы не найдены."
+              : "Сейчас фильмы недоступны."}
           </div>
         ) : null}
 
@@ -218,9 +214,9 @@ export default function MoviesPage() {
               <div className="space-y-2 p-3">
                 <p className="line-clamp-1 font-semibold text-white">{movie.title}</p>
                 <p className="text-xs uppercase tracking-wide text-slate-300">
-                  {movie.year ?? "Unknown year"} | rating {movie.rating.toFixed(1)}
+                  {movie.year ?? "Год неизвестен"} | рейтинг {movie.rating.toFixed(1)}
                 </p>
-                <p className="line-clamp-2 text-xs text-slate-400">{movie.overview || "No overview."}</p>
+                <p className="line-clamp-2 text-xs text-slate-400">{movie.overview || "Описание отсутствует."}</p>
               </div>
             </Link>
           ))}
@@ -232,14 +228,14 @@ export default function MoviesPage() {
             disabled={isLoading || page <= 1}
             className="rounded-xl border border-white/15 px-4 py-2 text-sm disabled:opacity-40"
           >
-            Previous
+            Назад
           </button>
           <button
             onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             disabled={isLoading || page >= totalPages}
             className="rounded-xl border border-white/15 px-4 py-2 text-sm disabled:opacity-40"
           >
-            Next
+            Вперёд
           </button>
         </div>
       </main>
