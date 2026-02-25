@@ -66,58 +66,6 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     node.scrollBy({ left: delta, behavior: "smooth" });
   };
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "mouse" && event.buttons !== 1) return;
-    dragActive.current = true;
-    dragStartX.current = event.clientX;
-    setIsDragging(true);
-    setDragOffset(0);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragActive.current) return;
-    const delta = event.clientX - dragStartX.current;
-    setDragOffset(delta);
-  };
-
-  const endDrag = (event?: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragActive.current) return;
-    dragActive.current = false;
-    const delta = dragOffset;
-    const threshold = 50;
-    if (Math.abs(delta) > threshold) {
-      if (delta < 0) {
-        goToPage(currentPage + 1);
-      } else {
-        goToPage(currentPage - 1);
-      }
-    }
-    setIsDragging(false);
-    setDragOffset(0);
-    event?.currentTarget.releasePointerCapture?.(event.pointerId);
-  };
-
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-    if (delta === 0) return;
-    event.preventDefault();
-    if (wheelLock.current) return;
-    wheelAccum.current += delta;
-    const threshold = 60;
-    if (wheelAccum.current > threshold) {
-      wheelLock.current = true;
-      wheelAccum.current = 0;
-      goToPage(currentPage + 1);
-      setTimeout(() => (wheelLock.current = false), 250);
-    } else if (wheelAccum.current < -threshold) {
-      wheelLock.current = true;
-      wheelAccum.current = 0;
-      goToPage(currentPage - 1);
-      setTimeout(() => (wheelLock.current = false), 250);
-    }
-  };
-
   const handleYearSelect = async (year: number | "all") => {
     setSelectedYear(year);
     setPage(1);
