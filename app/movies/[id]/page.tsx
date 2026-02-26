@@ -138,7 +138,11 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
             <div className="space-y-2">
               {movie.cast.length ? (
                 movie.cast.slice(0, 12).map((actor) => (
-                  <div key={`${actor.id}-${actor.name}`} className="flex items-center gap-3 rounded-xl bg-white/5 p-2">
+                  <Link
+                    key={`${actor.id}-${actor.name}`}
+                    href={`/actors/${actor.id}`}
+                    className="flex items-center gap-3 rounded-xl bg-white/5 p-2 transition hover:bg-white/10"
+                  >
                     <div className="relative h-12 w-12 overflow-hidden rounded-full">
                       <Image src={actor.profile || movie.poster} alt={actor.name} fill sizes="48px" className="object-cover" />
                     </div>
@@ -146,7 +150,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
                       <p className="text-sm font-semibold">{actor.name}</p>
                       <p className="text-xs text-slate-400">{actor.character || "Unknown role"}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <p className="text-sm text-slate-400">No cast data.</p>

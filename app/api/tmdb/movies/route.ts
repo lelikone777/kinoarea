@@ -1,5 +1,5 @@
 ﻿import { NextResponse } from "next/server";
-import { getCatalogMovies, getMovieGenres, isTmdbReachable } from "../../../lib/tmdb";
+import { getCatalogMovies, getMovieGenres, isTmdbReachable } from "@/app/lib/tmdb";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     sortByParam === "vote_average.desc" ||
     sortByParam === "release_date.desc" ||
     sortByParam === "revenue.desc" ||
+    sortByParam === "now_playing.desc" ||
     sortByParam === "popularity.desc"
       ? sortByParam
       : "popularity.desc";

@@ -42,6 +42,7 @@ export type TmdbGenre = {
 
 export type TmdbCatalogSortBy =
   | "popularity.desc"
+  | "now_playing.desc"
   | "vote_average.desc"
   | "release_date.desc"
   | "revenue.desc";
@@ -67,6 +68,51 @@ type CatalogMoviesInput = {
 
 type CatalogMoviesResult = {
   items: TmdbCatalogMovie[];
+  page: number;
+  totalPages: number;
+  totalResults: number;
+};
+
+type TmdbPersonKnownFor = {
+  id: number;
+  title?: string;
+  name?: string;
+  media_type?: string;
+  poster_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  overview?: string;
+  popularity?: number;
+};
+
+type TmdbPersonListItem = {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department?: string;
+  popularity: number;
+  known_for?: TmdbPersonKnownFor[];
+};
+
+export type TmdbPeopleSortBy = "popularity.desc";
+
+export type TmdbCatalogPerson = {
+  id: number;
+  name: string;
+  department: string;
+  popularity: number;
+  profile: string;
+  knownFor: string[];
+};
+
+type CatalogPeopleInput = {
+  query?: string;
+  page?: number;
+  sortBy?: TmdbPeopleSortBy;
+};
+
+type CatalogPeopleResult = {
+  items: TmdbCatalogPerson[];
   page: number;
   totalPages: number;
   totalResults: number;
@@ -330,6 +376,9 @@ export async function getCatalogMovies(input: CatalogMoviesInput = {}): Promise<
     endpoint = "/search/movie";
     params.query = query;
     params.primary_release_year = year;
+  } else if (sortBy === "now_playing.desc") {
+    endpoint = "/movie/now_playing";
+    params.region = "RU";
   } else {
     params.sort_by = sortBy;
     params.region = "RU";
@@ -347,6 +396,55 @@ export async function getCatalogMovies(input: CatalogMoviesInput = {}): Promise<
     page: response.page ?? page,
     totalPages: response.total_pages ?? 1,
     totalResults: response.total_results ?? filtered.length,
+  };
+}
+
+function mapCatalogPerson(
+  person: TmdbPersonListItem,
+  ctx: Awaited<ReturnType<typeof getAssetsContext>>
+): TmdbCatalogPerson {
+  const knownFor = (person.known_for ?? [])
+    .map((item) => item.title || item.name)
+    .filter((title): title is string => Boolean(title))
+    .slice(0, 3);
+
+  return {
+    id: person.id,
+    name: person.name,
+    department: person.known_for_department || "Актер",
+    popularity: person.popularity ?? 0,
+    profile: person.profile_path ? `${ctx.base}${ctx.profileSize}${person.profile_path}` : FALLBACK_AVATAR,
+    knownFor,
+  };
+}
+
+export async function getCatalogPeople(input: CatalogPeopleInput = {}): Promise<CatalogPeopleResult> {
+  const query = input.query?.trim() ?? "";
+  const page =
+    Number.isFinite(input.page) && Number(input.page) > 0
+      ? Math.min(Math.trunc(Number(input.page)), 500)
+      : 1;
+
+  const params: Record<string, string | number | undefined> = {
+    language: "ru-RU",
+    page,
+    include_adult: "false",
+  };
+  const endpoint = query ? "/search/person" : "/person/popular";
+  if (query) {
+    params.query = query;
+  }
+
+  const [ctx, response] = await Promise.all([
+    getAssetsContext(),
+    tmdbFetch<TmdbPagedResponse<TmdbPersonListItem>>(endpoint, params),
+  ]);
+
+  return {
+    items: response.results.map((person) => mapCatalogPerson(person, ctx)),
+    page: response.page ?? page,
+    totalPages: response.total_pages ?? 1,
+    totalResults: response.total_results ?? response.results.length,
   };
 }
 
@@ -763,34 +861,194 @@ export async function getMovieFullDetails(movieId: number): Promise<MovieFullDet
   };
 }
 
-type TmdbPerson = {
+type TmdbPersonMovieCredit = {
   id: number;
-  name: string;
-  profile_path: string | null;
-  known_for_department?: string;
-  popularity: number;
-  known_for?: { title?: string; name?: string; media_type?: string }[];
+  title?: string;
+  character?: string;
+  job?: string;
+  poster_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  overview?: string;
+  popularity?: number;
 };
 
-export async function getPopularPeople(limit = 10, page = 1): Promise<Person[]> {
-  const ctx = await getAssetsContext();
-  const { results } = await tmdbFetch<{ results: TmdbPerson[] }>("/person/popular", {
-    language: "ru-RU",
-    page,
-  });
+type TmdbPersonDetails = {
+  id: number;
+  name: string;
+  biography?: string;
+  birthday?: string;
+  deathday?: string | null;
+  place_of_birth?: string;
+  known_for_department?: string;
+  popularity?: number;
+  profile_path?: string | null;
+  also_known_as?: string[];
+  homepage?: string | null;
+  imdb_id?: string | null;
+  movie_credits?: {
+    cast?: TmdbPersonMovieCredit[];
+    crew?: TmdbPersonMovieCredit[];
+  };
+  images?: {
+    profiles?: { file_path: string }[];
+  };
+  external_ids?: {
+    imdb_id?: string | null;
+    instagram_id?: string | null;
+    twitter_id?: string | null;
+    facebook_id?: string | null;
+    tiktok_id?: string | null;
+    youtube_id?: string | null;
+  };
+};
 
-  return results.slice(0, limit).map((person) => {
-    const knownFor = person.known_for?.[0];
-    const knownTitle = knownFor?.title || knownFor?.name || "Знаковая роль";
-    const department = person.known_for_department || "Актёр";
-    const delta = `+${Math.round(person.popularity * 10)}`;
+export type TmdbPersonCredit = {
+  id: number;
+  title: string;
+  year?: number;
+  character?: string;
+  job?: string;
+  poster: string;
+  rating: number;
+  overview: string;
+};
+
+export type PersonFullDetails = {
+  id: number;
+  name: string;
+  biography: string;
+  birthday?: string;
+  deathday?: string;
+  placeOfBirth?: string;
+  department?: string;
+  popularity?: number;
+  profile: string;
+  knownAs: string[];
+  homepage?: string;
+  imdbId?: string;
+  social: {
+    instagram?: string;
+    twitter?: string;
+    facebook?: string;
+    tiktok?: string;
+    youtube?: string;
+  };
+  knownFor: TmdbPersonCredit[];
+  castCredits: TmdbPersonCredit[];
+  crewCredits: TmdbPersonCredit[];
+  images: string[];
+  raw: TmdbPersonDetails;
+};
+
+function getReleaseTimestamp(date?: string) {
+  if (!date) {
+    return 0;
+  }
+  const timestamp = new Date(date).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function mapPersonCredit(
+  credit: TmdbPersonMovieCredit,
+  ctx: Awaited<ReturnType<typeof getAssetsContext>>
+): TmdbPersonCredit {
+  return {
+    id: credit.id,
+    title: credit.title || "Без названия",
+    year: credit.release_date ? new Date(credit.release_date).getFullYear() : undefined,
+    character: credit.character || undefined,
+    job: credit.job || undefined,
+    poster: credit.poster_path ? `${ctx.base}${ctx.posterSize}${credit.poster_path}` : FALLBACK_POSTER,
+    rating: Number(credit.vote_average?.toFixed(1)) || 0,
+    overview: credit.overview || "",
+  };
+}
+
+function sortPersonCredits(a: TmdbPersonMovieCredit, b: TmdbPersonMovieCredit) {
+  const byDate = getReleaseTimestamp(b.release_date) - getReleaseTimestamp(a.release_date);
+  if (byDate !== 0) {
+    return byDate;
+  }
+  const byPopularity = (b.popularity ?? 0) - (a.popularity ?? 0);
+  if (byPopularity !== 0) {
+    return byPopularity;
+  }
+  return (b.vote_average ?? 0) - (a.vote_average ?? 0);
+}
+
+function uniqueCreditsByMovieId(credits: TmdbPersonMovieCredit[]) {
+  const seen = new Set<number>();
+  return credits.filter((credit) => {
+    if (!Number.isFinite(credit.id) || seen.has(credit.id)) {
+      return false;
+    }
+    seen.add(credit.id);
+    return true;
+  });
+}
+
+export async function getPersonFullDetails(personId: number): Promise<PersonFullDetails> {
+  const [ctx, details] = await Promise.all([
+    getAssetsContext(),
+    tmdbFetch<TmdbPersonDetails>(
+      `/person/${personId}`,
+      {
+        language: "ru-RU",
+        append_to_response: "movie_credits,images,external_ids",
+        include_image_language: "ru,en,null",
+      },
+      60 * 30
+    ),
+  ]);
+
+  const castCreditsRaw = [...(details.movie_credits?.cast ?? [])].sort(sortPersonCredits);
+  const crewCreditsRaw = [...(details.movie_credits?.crew ?? [])].sort(sortPersonCredits);
+  const knownForRaw = uniqueCreditsByMovieId(castCreditsRaw).slice(0, 12);
+
+  return {
+    id: details.id,
+    name: details.name,
+    biography: details.biography?.trim() || "Биография пока недоступна.",
+    birthday: details.birthday || undefined,
+    deathday: details.deathday || undefined,
+    placeOfBirth: details.place_of_birth || undefined,
+    department: details.known_for_department || undefined,
+    popularity: details.popularity,
+    profile: details.profile_path ? `${ctx.base}${ctx.profileSize}${details.profile_path}` : FALLBACK_AVATAR,
+    knownAs: details.also_known_as ?? [],
+    homepage: details.homepage || undefined,
+    imdbId: details.imdb_id || details.external_ids?.imdb_id || undefined,
+    social: {
+      instagram: details.external_ids?.instagram_id || undefined,
+      twitter: details.external_ids?.twitter_id || undefined,
+      facebook: details.external_ids?.facebook_id || undefined,
+      tiktok: details.external_ids?.tiktok_id || undefined,
+      youtube: details.external_ids?.youtube_id || undefined,
+    },
+    knownFor: knownForRaw.map((credit) => mapPersonCredit(credit, ctx)),
+    castCredits: castCreditsRaw.slice(0, 24).map((credit) => mapPersonCredit(credit, ctx)),
+    crewCredits: crewCreditsRaw.slice(0, 24).map((credit) => mapPersonCredit(credit, ctx)),
+    images: (details.images?.profiles ?? [])
+      .slice(0, 24)
+      .map((image) => `${ctx.base}${ctx.profileSize}${image.file_path}`),
+    raw: details,
+  };
+}
+
+export async function getPopularPeople(limit = 10, page = 1): Promise<Person[]> {
+  const catalog = await getCatalogPeople({ page, sortBy: "popularity.desc" });
+
+  return catalog.items.slice(0, limit).map((person) => {
+    const knownTitle = person.knownFor[0] || "Знаковая роль";
+    const delta = `+${Math.round((person.popularity ?? 0) * 10)}`;
 
     return {
       name: person.name,
-      role: department,
+      role: person.department || "Актер",
       knownFor: knownTitle,
       delta,
-      image: person.profile_path ? `${ctx.base}${ctx.profileSize}${person.profile_path}` : FALLBACK_AVATAR,
+      image: person.profile,
     };
   });
 }

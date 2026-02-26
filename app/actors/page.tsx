@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -8,87 +8,49 @@ import { Footer } from "../components/layout/Footer";
 import { navLinks } from "../data/content";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 
-type CatalogMovie = {
-  id: number;
-  title: string;
-  year?: number;
-  type: "movie";
-  poster: string;
-  rating: number;
-  overview: string;
-  genres: string[];
-};
-
-type Genre = {
+type CatalogPerson = {
   id: number;
   name: string;
+  department: string;
+  popularity: number;
+  profile: string;
+  knownFor: string[];
 };
 
-type MoviesApiResponse = {
-  items: CatalogMovie[];
+type PeopleApiResponse = {
+  items: CatalogPerson[];
   page: number;
   totalPages: number;
   totalResults: number;
-  genres: Genre[];
   error?: string;
 };
 
 const SORT_OPTIONS = [
   { value: "popularity.desc", label: "Популярные" },
-  { value: "now_playing.desc", label: "Сейчас в прокате" },
-  { value: "vote_average.desc", label: "С высоким рейтингом" },
-  { value: "release_date.desc", label: "Сначала новые" },
-  { value: "revenue.desc", label: "По кассовым сборам" },
 ] as const;
+
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 const DEFAULT_SORT_BY: SortValue = "popularity.desc";
-
-function parseSortBy(value: string | null): SortValue {
-  if (!value) {
-    return DEFAULT_SORT_BY;
-  }
-  return SORT_OPTIONS.some((option) => option.value === value)
-    ? (value as SortValue)
-    : DEFAULT_SORT_BY;
-}
-
 const CATALOG_PAGE_SIZE = 8;
 const TMDB_PAGE_SIZE = 20;
 const TMDB_MAX_PAGE = 500;
 
-export default function MoviesPage() {
+export default function ActorsPage() {
   const router = useRouter();
-  const currentYear = new Date().getFullYear();
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
-  const [year, setYear] = useState<string>("");
-  const [genreId, setGenreId] = useState<string>("");
   const [sortBy, setSortBy] = useState<SortValue>(DEFAULT_SORT_BY);
-  const [isSortInitialized, setIsSortInitialized] = useState(false);
   const [page, setPage] = useState(1);
   const [visiblePages, setVisiblePages] = useState(1);
   const [pageInput, setPageInput] = useState("1");
 
-  const [items, setItems] = useState<CatalogMovie[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
+  const [items, setItems] = useState<CatalogPerson[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResultsRaw, setTotalResultsRaw] = useState(0);
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const years = useMemo(
-    () => Array.from({ length: 80 }, (_, index) => String(currentYear - index)),
-    [currentYear],
-  );
-  const yearOptions = useMemo<StyledSelectOption[]>(
-    () => [{ value: "", label: "Любой год" }, ...years.map((value) => ({ value, label: value }))],
-    [years],
-  );
-  const genreOptions = useMemo<StyledSelectOption[]>(
-    () => [{ value: "", label: "Все жанры" }, ...genres.map((genre) => ({ value: String(genre.id), label: genre.name }))],
-    [genres],
-  );
   const sortOptions = useMemo<StyledSelectOption[]>(
     () => SORT_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
     [],
@@ -99,19 +61,9 @@ export default function MoviesPage() {
   }, [page]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setSortBy(parseSortBy(params.get("sortBy")));
-    setIsSortInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isSortInitialized) {
-      return;
-    }
-
     let isMounted = true;
 
-    const loadMovies = async () => {
+    const loadPeople = async () => {
       setIsLoading(true);
       setError(null);
 
@@ -128,15 +80,13 @@ export default function MoviesPage() {
         const fetchPage = async (tmdbPage: number) => {
           const params = new URLSearchParams();
           if (submittedQuery.trim()) params.set("query", submittedQuery.trim());
-          if (year) params.set("year", year);
-          if (genreId) params.set("genreId", genreId);
           params.set("sortBy", sortBy);
           params.set("page", String(tmdbPage));
 
-          const response = await fetch(`/api/tmdb/movies?${params.toString()}`);
-          const data = (await response.json()) as MoviesApiResponse;
+          const response = await fetch(`/api/tmdb/people?${params.toString()}`);
+          const data = (await response.json()) as PeopleApiResponse;
           if (!response.ok) {
-            throw new Error(data.error || "Не удалось загрузить каталог TMDB");
+            throw new Error(data.error || "Не удалось загрузить каталог актеров TMDB");
           }
           return { tmdbPage, data };
         };
@@ -165,7 +115,6 @@ export default function MoviesPage() {
         setTotalResultsRaw(rawTotalResults);
         setTotalResults(accessibleResults);
         setTotalPages(computedTotalPages);
-        setGenres(Array.isArray(meta?.genres) ? meta.genres : []);
 
         const ordered = [...responses]
           .sort((a, b) => a.tmdbPage - b.tmdbPage)
@@ -180,7 +129,7 @@ export default function MoviesPage() {
           return;
         }
         setItems([]);
-        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить фильмы");
+        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить актеров");
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -188,14 +137,14 @@ export default function MoviesPage() {
       }
     };
 
-    void loadMovies();
+    void loadPeople();
 
     return () => {
       isMounted = false;
     };
-  }, [submittedQuery, year, genreId, sortBy, page, visiblePages, isSortInitialized]);
+  }, [submittedQuery, sortBy, page, visiblePages]);
 
-  const hasFilters = Boolean(submittedQuery.trim() || year || genreId);
+  const hasFilters = Boolean(submittedQuery.trim());
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
   const leftPages = Math.max(0, page - 1);
   const rightPages = Math.max(0, totalPages - shownUntilPage);
@@ -213,8 +162,8 @@ export default function MoviesPage() {
 
       <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-5 pb-24 pt-10">
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог фильмов TMDB</h1>
-          <p className="text-sm text-slate-300">Ищите и фильтруйте фильмы с помощью API The Movie Database.</p>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог актеров TMDB</h1>
+          <p className="text-sm text-slate-300">Ищите актеров и открывайте их фильмографию.</p>
         </div>
 
         <form
@@ -224,35 +173,13 @@ export default function MoviesPage() {
             setVisiblePages(1);
             setSubmittedQuery(query);
           }}
-          className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-5"
+          className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Название фильма"
+            placeholder="Имя актера"
             className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
-          />
-
-          <StyledSelect
-            value={year}
-            onChange={(nextValue) => {
-              setPage(1);
-              setVisiblePages(1);
-              setYear(nextValue);
-            }}
-            options={yearOptions}
-            placeholder="Любой год"
-          />
-
-          <StyledSelect
-            value={genreId}
-            onChange={(nextValue) => {
-              setPage(1);
-              setVisiblePages(1);
-              setGenreId(nextValue);
-            }}
-            options={genreOptions}
-            placeholder="Все жанры"
           />
 
           <StyledSelect
@@ -266,7 +193,9 @@ export default function MoviesPage() {
             placeholder="Сортировка"
           />
 
-          <button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900">Найти</button>
+          <button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 sm:col-span-2 lg:col-span-1">
+            Найти
+          </button>
         </form>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -355,35 +284,37 @@ export default function MoviesPage() {
 
         {!isLoading && !error && items.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 text-slate-300">
-            {hasFilters ? "По текущим фильтрам фильмы не найдены." : "Сейчас фильмы недоступны."}
+            {hasFilters ? "По текущему запросу актеры не найдены." : "Сейчас актеры недоступны."}
           </div>
         ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((movie) => (
+          {items.map((person) => (
             <article
-              key={movie.id}
+              key={person.id}
               role="link"
               tabIndex={0}
-              onClick={() => router.push(`/movies/${movie.id}`)}
+              onClick={() => router.push(`/actors/${person.id}`)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  router.push(`/movies/${movie.id}`);
+                  router.push(`/actors/${person.id}`);
                 }
               }}
               className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition hover:-translate-y-1 hover:border-sky-300/40"
             >
               <div className="relative aspect-[2/3]">
-                <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
+                <Image src={person.profile} alt={person.name} fill className="object-cover" />
               </div>
 
               <div className="space-y-2 p-3">
-                <p className="line-clamp-1 font-semibold text-white">{movie.title}</p>
+                <p className="line-clamp-1 font-semibold text-white">{person.name}</p>
                 <p className="text-xs uppercase tracking-wide text-slate-300">
-                  {movie.year ?? "Год неизвестен"} | рейтинг {movie.rating.toFixed(1)}
+                  {person.department || "Актер"} | популярность {person.popularity.toFixed(1)}
                 </p>
-                <p className="line-clamp-2 text-xs text-slate-400">{movie.overview || "Описание отсутствует."}</p>
+                <p className="line-clamp-2 text-xs text-slate-400">
+                  {person.knownFor.length ? person.knownFor.join(" • ") : "Карьера обновляется."}
+                </p>
               </div>
             </article>
           ))}
@@ -406,4 +337,3 @@ export default function MoviesPage() {
     </div>
   );
 }
-

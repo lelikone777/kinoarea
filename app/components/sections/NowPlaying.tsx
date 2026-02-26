@@ -166,10 +166,13 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
             Смотрите свежие премьеры и выбирайте фильмы по релизу, рейтингу, популярности и жанру.
           </p>
         </div>
-        <button className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40">
+        <Link
+          href="/movies?sortBy=now_playing.desc"
+          className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+        >
           Полный список
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
-        </button>
+        </Link>
       </div>
 
       <div className="mt-4 hidden lg:flex">

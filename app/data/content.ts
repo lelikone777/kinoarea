@@ -55,7 +55,7 @@ export type BoxOffice = {
 export const navLinks = [
   { label: "Главная", href: "/" },
   { label: "Каталог", href: "/movies" },
-  { label: "Премьеры", href: "#premieres" },
+  { label: "Актеры", href: "/actors" },
   { label: "Люди", href: "#people" },
   { label: "Новости", href: "#news" },
 ];
