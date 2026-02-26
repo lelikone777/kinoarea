@@ -149,6 +149,7 @@ export default function ActorsPage() {
   const leftPages = Math.max(0, page - 1);
   const rightPages = Math.max(0, totalPages - shownUntilPage);
   const canShowMore = !isLoading && rightPages > 0;
+  const [failedImages, setFailedImages] = useState<Record<number, true>>({});
 
   const goToPage = (targetPage: number) => {
     const clamped = Math.max(1, Math.min(totalPages, targetPage));
@@ -304,7 +305,16 @@ export default function ActorsPage() {
               className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition hover:-translate-y-1 hover:border-sky-300/40"
             >
               <div className="relative aspect-[2/3]">
-                <Image src={person.profile} alt={person.name} fill className="object-cover" />
+                <Image
+                  src={failedImages[person.id] ? "/placeholders/avatar.svg" : person.profile}
+                  alt={person.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                  onError={() => {
+                    setFailedImages((current) => (current[person.id] ? current : { ...current, [person.id]: true }));
+                  }}
+                />
               </div>
 
               <div className="space-y-2 p-3">

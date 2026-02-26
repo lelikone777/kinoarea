@@ -269,6 +269,13 @@ async function getGenresMap() {
   return new Map(genres.map((genre) => [genre.id, genre.name]));
 }
 
+type ImageAssetsContext = {
+  base: string;
+  posterSize: string;
+  backdropSize: string;
+  profileSize: string;
+};
+
 function pickPosterSize(sizes: string[]) {
   const preferred = ["w500", "w780", "original"];
   for (const size of preferred) {
@@ -293,12 +300,18 @@ function pickProfileSize(sizes: string[]) {
   return sizes.at(0) ?? "w185";
 }
 
-async function getAssetsContext() {
-  const [config, genresMap] = await Promise.all([getTmdbConfiguration(), getGenresMap()]);
+async function getImageAssetsContext(): Promise<ImageAssetsContext> {
+  const config = await getTmdbConfiguration();
   const base = config.images.secure_base_url || "https://image.tmdb.org/t/p/";
   const posterSize = pickPosterSize(config.images.poster_sizes);
   const backdropSize = pickBackdropSize(config.images.backdrop_sizes);
   const profileSize = pickProfileSize(config.images.profile_sizes);
+  return { base, posterSize, backdropSize, profileSize };
+}
+
+async function getAssetsContext() {
+  const [imageAssets, genresMap] = await Promise.all([getImageAssetsContext(), getGenresMap()]);
+  const { base, posterSize, backdropSize, profileSize } = imageAssets;
   return { base, posterSize, backdropSize, profileSize, genresMap };
 }
 
@@ -401,7 +414,7 @@ export async function getCatalogMovies(input: CatalogMoviesInput = {}): Promise<
 
 function mapCatalogPerson(
   person: TmdbPersonListItem,
-  ctx: Awaited<ReturnType<typeof getAssetsContext>>
+  ctx: Awaited<ReturnType<typeof getImageAssetsContext>>
 ): TmdbCatalogPerson {
   const knownFor = (person.known_for ?? [])
     .map((item) => item.title || item.name)
@@ -436,7 +449,7 @@ export async function getCatalogPeople(input: CatalogPeopleInput = {}): Promise<
   }
 
   const [ctx, response] = await Promise.all([
-    getAssetsContext(),
+    getImageAssetsContext(),
     tmdbFetch<TmdbPagedResponse<TmdbPersonListItem>>(endpoint, params),
   ]);
 
@@ -951,7 +964,7 @@ function getReleaseTimestamp(date?: string) {
 
 function mapPersonCredit(
   credit: TmdbPersonMovieCredit,
-  ctx: Awaited<ReturnType<typeof getAssetsContext>>
+  ctx: Awaited<ReturnType<typeof getImageAssetsContext>>
 ): TmdbPersonCredit {
   return {
     id: credit.id,
@@ -990,7 +1003,7 @@ function uniqueCreditsByMovieId(credits: TmdbPersonMovieCredit[]) {
 
 export async function getPersonFullDetails(personId: number): Promise<PersonFullDetails> {
   const [ctx, details] = await Promise.all([
-    getAssetsContext(),
+    getImageAssetsContext(),
     tmdbFetch<TmdbPersonDetails>(
       `/person/${personId}`,
       {

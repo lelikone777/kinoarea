@@ -89,16 +89,16 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
               {hero.tag}
             </div>
 
-            <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-30 flex flex-col gap-4 sm:max-w-xl">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
-                <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">Экшн</span>
-                <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">Драма</span>
-                <span className="flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 font-semibold text-emerald-300 backdrop-blur">
-                  <PlayIcon className="h-4 w-4" />
-                  {hero.duration}
-                </span>
-              </div>
+            <div className="pointer-events-none absolute right-6 top-6 z-30 flex flex-wrap items-center justify-end gap-3 text-xs text-slate-300 sm:max-w-sm">
+              <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">Экшн</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">Драма</span>
+              <span className="flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 font-semibold text-emerald-300 backdrop-blur">
+                <PlayIcon className="h-4 w-4" />
+                {hero.duration}
+              </span>
+            </div>
 
+            <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-30 flex flex-col gap-4 sm:max-w-xl">
               <div>
                 {hero.movieId ? (
                   <Link href={heroMovieHref} className="pointer-events-auto inline-block">
