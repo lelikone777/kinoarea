@@ -5,7 +5,7 @@ export const deDictionary: UiDictionary = {
     "/": "Start",
     "/movies": "Katalog",
     "/actors": "Schauspieler",
-    "/people": "Personen",
+    "/trailers": "Trailer",
     "/news": "News",
     "/schedule": "Spielplan",
   },

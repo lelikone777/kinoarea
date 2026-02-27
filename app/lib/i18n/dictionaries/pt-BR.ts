@@ -5,7 +5,7 @@ export const ptDictionary: UiDictionary = {
     "/": "In?cio",
     "/movies": "Cat?logo",
     "/actors": "Atores",
-    "/people": "Pessoas",
+    "/trailers": "Trailers",
     "/news": "Not?cias",
     "/schedule": "Programa??o",
   },

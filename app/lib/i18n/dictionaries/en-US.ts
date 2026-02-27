@@ -5,7 +5,7 @@ export const enDictionary: UiDictionary = {
     "/": "Home",
     "/movies": "Catalog",
     "/actors": "Actors",
-    "/people": "People",
+    "/trailers": "Trailers",
     "/news": "News",
     "/schedule": "Schedule",
   },

@@ -120,13 +120,13 @@ export function Header({ navLinks }: HeaderProps) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <LanguageSwitcher />
             <Button variant="icon">
               <SearchIcon className="h-5 w-5 text-slate-200" />
             </Button>
             <Button variant="icon">
               <BellIcon className="h-5 w-5 text-slate-200" />
             </Button>
+            <LanguageSwitcher className="hidden sm:block" />
             <Button
               variant="cta"
               onClick={() => router.push("/schedule")}

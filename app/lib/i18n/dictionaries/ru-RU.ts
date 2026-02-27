@@ -5,7 +5,7 @@ export const ruDictionary: UiDictionary = {
     "/": "Главная",
     "/movies": "Каталог",
     "/actors": "Актеры",
-    "/people": "Люди",
+    "/trailers": "Трейлеры",
     "/news": "Новости",
     "/schedule": "Расписание",
   },

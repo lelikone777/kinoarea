@@ -1,8 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
+import { cn } from "@/app/lib/cn";
 import { useSiteLanguage } from "@/app/hooks/useSiteLanguage";
 import { SUPPORTED_SITE_LANGUAGES, type SiteLanguage } from "@/app/lib/language";
+import { StyledSelect } from "./StyledSelect";
 
 const LABELS: Record<SiteLanguage, string> = {
   "ru-RU": "RU",
@@ -12,28 +14,31 @@ const LABELS: Record<SiteLanguage, string> = {
   "de-DE": "DE",
 };
 
-export function LanguageSwitcher() {
+type LanguageSwitcherProps = {
+  className?: string;
+};
+
+export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
   const router = useRouter();
   const { language, setLanguage } = useSiteLanguage();
+  const options = SUPPORTED_SITE_LANGUAGES.map((lang) => ({
+    value: lang,
+    label: LABELS[lang],
+  }));
 
   return (
-    <label className="hidden sm:block">
-      <span className="sr-only">Language</span>
-      <select
-        value={language}
-        onChange={(event) => {
-          const nextLanguage = event.target.value as SiteLanguage;
-          setLanguage(nextLanguage);
-          router.refresh();
-        }}
-        className="rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs font-semibold text-slate-100 transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-sky-300/60"
-      >
-        {SUPPORTED_SITE_LANGUAGES.map((lang) => (
-          <option key={lang} value={lang} className="bg-slate-900 text-slate-100">
-            {LABELS[lang]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <StyledSelect
+      value={language}
+      onChange={(nextValue) => {
+        const nextLanguage = nextValue as SiteLanguage;
+        setLanguage(nextLanguage);
+        router.refresh();
+      }}
+      options={options}
+      placeholder={LABELS[language]}
+      dropdownWidth="content"
+      selectedIndicator="none"
+      className={cn("w-[78px]", className)}
+    />
   );
 }

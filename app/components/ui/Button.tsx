@@ -8,6 +8,7 @@ export const buttonStyles = {
   cta: "rounded-xl bg-white px-4 py-2 text-sm font-semibold !text-slate-900 !no-underline shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 hover:opacity-95 hover:!text-slate-900 visited:!text-slate-900",
   secondary: "rounded-2xl border border-white/15 bg-slate-900/60 px-5 py-3 text-sm font-semibold text-white hover:border-white/40",
   icon: "h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10",
+  sectionListLink: "group rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:border-white/40",
   smallOutline: "rounded-lg border border-white/15 px-2.5 py-1.5 text-xs hover:border-white/40 disabled:opacity-40",
   smallSolid: "rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 hover:opacity-90 disabled:opacity-50",
 } as const;
@@ -41,4 +42,3 @@ export function LinkButton({ href, children, className, variant = "secondary", a
     </Link>
   );
 }
-

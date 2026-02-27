@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRightIcon, StarIcon } from "../icons";
+import { LinkButton } from "../ui/Button";
 import type { Movie } from "../../data/content";
 import { useUiDictionary } from "@/app/hooks/useUiDictionary";
 import { FilterWidgetTagCloud } from "../ui/filters/FilterWidget";
@@ -161,13 +162,13 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
             {dictionary.nowPlaying.description}
           </p>
         </div>
-        <Link
+        <LinkButton
           href="/movies?sortBy=now_playing.desc"
-          className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+          variant="sectionListLink"
         >
           {dictionary.nowPlaying.fullList}
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
-        </Link>
+        </LinkButton>
       </div>
 
       <div className="mt-4">

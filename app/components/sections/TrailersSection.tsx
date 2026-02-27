@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarIcon, PlayIcon, ArrowRightIcon } from "../icons";
+import { LinkButton } from "../ui/Button";
 import type { Trailer } from "../../data/content";
 import { useUiDictionary } from "@/app/hooks/useUiDictionary";
 
@@ -60,13 +61,13 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
     <section className="mt-14 space-y-6" id="trailers-week">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-extrabold">{dictionary.trailers.title}</h2>
-        <Link
+        <LinkButton
           href="/trailers"
-          className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/5"
+          variant="sectionListLink"
         >
           {dictionary.trailers.all}
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
-        </Link>
+        </LinkButton>
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-xl shadow-sky-500/10">

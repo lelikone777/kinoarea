@@ -56,7 +56,7 @@ export const navLinks = [
   { label: "Главная", href: "/" },
   { label: "Каталог", href: "/movies" },
   { label: "Актеры", href: "/actors" },
-  { label: "Люди", href: "#people" },
+  { label: "Трейлеры", href: "/trailers" },
   { label: "Новости", href: "#news" },
 ];
 
