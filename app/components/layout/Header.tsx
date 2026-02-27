@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
 import { CloseIcon, MenuIcon } from "../icons";
@@ -18,6 +18,7 @@ type HeaderProps = {
 
 export function Header({ navLinks }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const scrollPositionRef = useRef(0);
 
@@ -121,7 +122,11 @@ export function Header({ navLinks }: HeaderProps) {
             <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition hover:bg-white/10">
               <BellIcon className="h-5 w-5 text-slate-200" />
             </button>
-            <button className="hidden items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-sky-500/25 transition hover:-translate-y-0.5 sm:flex">
+            <button
+              type="button"
+              onClick={() => router.push("/schedule")}
+              className="hidden items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-sky-500/25 transition hover:-translate-y-0.5 sm:flex"
+            >
               <CalendarIcon className="h-4 w-4 text-sky-600" />
               Расписание
             </button>
