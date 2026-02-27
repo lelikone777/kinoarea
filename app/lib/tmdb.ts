@@ -1,5 +1,6 @@
 ﻿import type { Movie, Person, Trailer } from "../data/content";
 import type { TrailerHero } from "../components/sections/TrailersSection";
+import { getLanguageBase, normalizeSiteLanguage, type SiteLanguage } from "./language";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const FALLBACK_POSTER = "/placeholders/poster.svg";
@@ -64,6 +65,7 @@ type CatalogMoviesInput = {
   genreId?: number;
   page?: number;
   sortBy?: TmdbCatalogSortBy;
+  language?: SiteLanguage;
 };
 
 type CatalogMoviesResult = {
@@ -109,6 +111,7 @@ type CatalogPeopleInput = {
   query?: string;
   page?: number;
   sortBy?: TmdbPeopleSortBy;
+  language?: SiteLanguage;
 };
 
 type CatalogPeopleResult = {
@@ -255,17 +258,17 @@ export async function getTmdbConfiguration() {
   return tmdbFetch<TmdbConfigResponse>("/configuration", {}, 60 * 60 * 24);
 }
 
-export async function getMovieGenres(): Promise<TmdbGenre[]> {
+export async function getMovieGenres(language: SiteLanguage = "ru-RU"): Promise<TmdbGenre[]> {
   const { genres } = await tmdbFetch<TmdbGenreResponse>(
     "/genre/movie/list",
-    { language: "ru-RU" },
+    { language: normalizeSiteLanguage(language) },
     60 * 60 * 24
   );
   return genres;
 }
 
-async function getGenresMap() {
-  const genres = await getMovieGenres();
+async function getGenresMap(language: SiteLanguage = "ru-RU") {
+  const genres = await getMovieGenres(language);
   return new Map(genres.map((genre) => [genre.id, genre.name]));
 }
 
@@ -309,8 +312,9 @@ async function getImageAssetsContext(): Promise<ImageAssetsContext> {
   return { base, posterSize, backdropSize, profileSize };
 }
 
-async function getAssetsContext() {
-  const [imageAssets, genresMap] = await Promise.all([getImageAssetsContext(), getGenresMap()]);
+async function getAssetsContext(language: SiteLanguage = "ru-RU") {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const [imageAssets, genresMap] = await Promise.all([getImageAssetsContext(), getGenresMap(normalizedLanguage)]);
   const { base, posterSize, backdropSize, profileSize } = imageAssets;
   return { base, posterSize, backdropSize, profileSize, genresMap };
 }
@@ -376,10 +380,11 @@ export async function getCatalogMovies(input: CatalogMoviesInput = {}): Promise<
       ? Math.trunc(Number(input.genreId))
       : undefined;
 
-  const ctx = await getAssetsContext();
+  const language = normalizeSiteLanguage(input.language);
+  const ctx = await getAssetsContext(language);
   const isSearch = query.length > 0;
   const params: Record<string, string | number | undefined> = {
-    language: "ru-RU",
+    language,
     page,
     include_adult: "false",
   };
@@ -438,8 +443,9 @@ export async function getCatalogPeople(input: CatalogPeopleInput = {}): Promise<
       ? Math.min(Math.trunc(Number(input.page)), 500)
       : 1;
 
+  const language = normalizeSiteLanguage(input.language);
   const params: Record<string, string | number | undefined> = {
-    language: "ru-RU",
+    language,
     page,
     include_adult: "false",
   };
@@ -461,11 +467,12 @@ export async function getCatalogPeople(input: CatalogPeopleInput = {}): Promise<
   };
 }
 
-export async function getPopularMovies(limit = 6, year?: number): Promise<Movie[]> {
-  const ctx = await getAssetsContext();
+export async function getPopularMovies(limit = 6, year?: number, language: SiteLanguage = "ru-RU"): Promise<Movie[]> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const ctx = await getAssetsContext(normalizedLanguage);
   const endpoint = year ? "/discover/movie" : "/movie/popular";
   const params: Record<string, string | number> = {
-    language: "ru-RU",
+    language: normalizedLanguage,
     region: "RU",
     sort_by: "popularity.desc",
     page: 1,
@@ -478,35 +485,38 @@ export async function getPopularMovies(limit = 6, year?: number): Promise<Movie[
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Популярное"));
 }
 
-export async function getNowPlayingMovies(limit = 12): Promise<Movie[]> {
-  const ctx = await getAssetsContext();
+export async function getNowPlayingMovies(limit = 12, language: SiteLanguage = "ru-RU"): Promise<Movie[]> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const ctx = await getAssetsContext(normalizedLanguage);
   const { results } = await tmdbFetch<{ results: TmdbMovie[] }>("/movie/now_playing", {
-    language: "ru-RU",
+    language: normalizedLanguage,
     region: "RU",
     page: 1,
   });
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Сейчас в кино"));
 }
 
-export async function getUpcomingMovies(limit = 8): Promise<Movie[]> {
-  const ctx = await getAssetsContext();
+export async function getUpcomingMovies(limit = 8, language: SiteLanguage = "ru-RU"): Promise<Movie[]> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const ctx = await getAssetsContext(normalizedLanguage);
   const { results } = await tmdbFetch<{ results: TmdbMovie[] }>("/movie/upcoming", {
-    language: "ru-RU",
+    language: normalizedLanguage,
     region: "RU",
     page: 1,
   });
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Скоро"));
 }
 
-async function getMovieTrailerVideo(movieId: number): Promise<TmdbVideo | undefined> {
-  // пробуем на русском, если нет — берём английский
+async function getMovieTrailerVideo(movieId: number, language: SiteLanguage = "ru-RU"): Promise<TmdbVideo | undefined> {
+  // сначала пробуем выбранный язык, если нет — берём английский
+  const normalizedLanguage = normalizeSiteLanguage(language);
   const attempt = async (lang: string) =>
     tmdbFetch<TmdbVideosResponse>(`/movie/${movieId}/videos`, { language: lang }, 60 * 30);
 
-  const [ru, en] = await Promise.allSettled([attempt("ru-RU"), attempt("en-US")]);
-  const ruVideos = ru.status === "fulfilled" ? ru.value.results : [];
+  const [primary, en] = await Promise.allSettled([attempt(normalizedLanguage), attempt("en-US")]);
+  const primaryVideos = primary.status === "fulfilled" ? primary.value.results : [];
   const enVideos = en.status === "fulfilled" ? en.value.results : [];
-  const videos = [...ruVideos, ...enVideos];
+  const videos = [...primaryVideos, ...enVideos];
 
   return (
     videos.find((v) => v.site === "YouTube" && v.type === "Trailer") ||
@@ -514,10 +524,11 @@ async function getMovieTrailerVideo(movieId: number): Promise<TmdbVideo | undefi
   );
 }
 
-export async function getWeeklyTrailers(limit = 6): Promise<Trailer[]> {
-  const ctx = await getAssetsContext();
+export async function getWeeklyTrailers(limit = 6, language: SiteLanguage = "ru-RU"): Promise<Trailer[]> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const ctx = await getAssetsContext(normalizedLanguage);
   const { results: movies } = await tmdbFetch<{ results: TmdbMovie[] }>("/trending/movie/week", {
-    language: "ru-RU",
+    language: normalizedLanguage,
     page: 1,
   });
 
@@ -526,7 +537,7 @@ export async function getWeeklyTrailers(limit = 6): Promise<Trailer[]> {
   const trailers: Trailer[] = [];
   for (const movie of picks) {
     if (trailers.length >= limit) break;
-    const video = await getMovieTrailerVideo(movie.id);
+    const video = await getMovieTrailerVideo(movie.id, normalizedLanguage);
     if (!video) continue;
 
     const imagePath = movie.backdrop_path ?? movie.poster_path;
@@ -551,10 +562,11 @@ export async function getWeeklyTrailers(limit = 6): Promise<Trailer[]> {
   return trailers.slice(0, limit);
 }
 
-export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
-  const ctx = await getAssetsContext();
+export async function getFeaturedTrailerHero(language: SiteLanguage = "ru-RU"): Promise<TrailerHero | null> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const ctx = await getAssetsContext(normalizedLanguage);
   const { results: movies } = await tmdbFetch<{ results: TmdbMovie[] }>("/trending/movie/week", {
-    language: "ru-RU",
+    language: normalizedLanguage,
     page: 1,
   });
 
@@ -565,7 +577,7 @@ export async function getFeaturedTrailerHero(): Promise<TrailerHero | null> {
         videos: TmdbVideosResponse;
         credits?: { cast?: TmdbCastMember[] };
       }
-    >(`/movie/${movie.id}`, { language: "ru-RU", append_to_response: "videos,credits" }, 60 * 30);
+    >(`/movie/${movie.id}`, { language: normalizedLanguage, append_to_response: "videos,credits" }, 60 * 30);
 
     const video =
       details.videos.results.find((v) => v.site === "YouTube" && v.type === "Trailer" && v.official) ||
@@ -744,16 +756,18 @@ export type MovieFullDetails = {
   raw: TmdbMovieDetails;
 };
 
-export async function getMovieFullDetails(movieId: number): Promise<MovieFullDetails> {
-  const ctx = await getAssetsContext();
+export async function getMovieFullDetails(movieId: number, language: SiteLanguage = "ru-RU"): Promise<MovieFullDetails> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const languageBase = getLanguageBase(normalizedLanguage);
+  const ctx = await getAssetsContext(normalizedLanguage);
   const details = await tmdbFetch<TmdbMovieDetails>(
     `/movie/${movieId}`,
     {
-      language: "ru-RU",
+      language: normalizedLanguage,
       append_to_response:
         "credits,videos,images,keywords,recommendations,similar,reviews,watch/providers,release_dates",
-      include_image_language: "ru,en,null",
-      include_video_language: "ru-RU,en-US",
+      include_image_language: `${languageBase},en,null`,
+      include_video_language: `${normalizedLanguage},en-US`,
     },
     60 * 30
   );
@@ -1001,15 +1015,17 @@ function uniqueCreditsByMovieId(credits: TmdbPersonMovieCredit[]) {
   });
 }
 
-export async function getPersonFullDetails(personId: number): Promise<PersonFullDetails> {
+export async function getPersonFullDetails(personId: number, language: SiteLanguage = "ru-RU"): Promise<PersonFullDetails> {
+  const normalizedLanguage = normalizeSiteLanguage(language);
+  const languageBase = getLanguageBase(normalizedLanguage);
   const [ctx, details] = await Promise.all([
     getImageAssetsContext(),
     tmdbFetch<TmdbPersonDetails>(
       `/person/${personId}`,
       {
-        language: "ru-RU",
+        language: normalizedLanguage,
         append_to_response: "movie_credits,images,external_ids",
-        include_image_language: "ru,en,null",
+        include_image_language: `${languageBase},en,null`,
       },
       60 * 30
     ),
@@ -1049,8 +1065,8 @@ export async function getPersonFullDetails(personId: number): Promise<PersonFull
   };
 }
 
-export async function getPopularPeople(limit = 10, page = 1): Promise<Person[]> {
-  const catalog = await getCatalogPeople({ page, sortBy: "popularity.desc" });
+export async function getPopularPeople(limit = 10, page = 1, language: SiteLanguage = "ru-RU"): Promise<Person[]> {
+  const catalog = await getCatalogPeople({ page, sortBy: "popularity.desc", language });
 
   return catalog.items.slice(0, limit).map((person) => {
     const knownTitle = person.knownFor[0] || "Знаковая роль";

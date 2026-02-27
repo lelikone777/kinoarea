@@ -11,6 +11,8 @@ type PaginationToolbarProps = {
   onGoToPage: (targetPage: number) => void;
   onSubmitPage: () => void;
   label?: string;
+  goToLabel?: string;
+  pageInputAria?: string;
 };
 
 export function PaginationToolbar({
@@ -24,6 +26,8 @@ export function PaginationToolbar({
   onGoToPage,
   onSubmitPage,
   label = "Страницы",
+  goToLabel = "Перейти",
+  pageInputAria = "Номер страницы",
 }: PaginationToolbarProps) {
   return (
     <div className="ml-auto flex w-full max-w-2xl flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 text-sm text-slate-200">
@@ -50,10 +54,10 @@ export function PaginationToolbar({
           value={pageInput}
           onChange={(event) => onPageInputChange(event.target.value.replace(/[^\d]/g, ""))}
           className="w-20 rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-center text-sm text-white outline-none transition focus:border-sky-300/60"
-          aria-label="Номер страницы"
+          aria-label={pageInputAria}
         />
         <Button variant="smallSolid" type="submit" disabled={isLoading}>
-          Перейти
+          {goToLabel}
         </Button>
       </form>
 
@@ -68,4 +72,3 @@ export function PaginationToolbar({
     </div>
   );
 }
-

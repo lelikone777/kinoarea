@@ -1,5 +1,6 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCatalogMovies, getMovieGenres, isTmdbReachable } from "@/app/lib/tmdb";
+import { normalizeSiteLanguage } from "@/app/lib/language";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,6 +9,7 @@ export async function GET(request: Request) {
   const genreId = Number(searchParams.get("genreId") || "");
   const page = Number(searchParams.get("page") || "1");
   const sortByParam = searchParams.get("sortBy");
+  const language = normalizeSiteLanguage(searchParams.get("language"));
 
   const sortBy =
     sortByParam === "vote_average.desc" ||
@@ -31,8 +33,9 @@ export async function GET(request: Request) {
         genreId: Number.isFinite(genreId) && genreId > 0 ? genreId : undefined,
         page: Number.isFinite(page) && page > 0 ? page : 1,
         sortBy,
+        language,
       }),
-      getMovieGenres(),
+      getMovieGenres(language),
     ]);
 
     return NextResponse.json({ ...movies, genres });

@@ -8,6 +8,8 @@ import { Button } from "../components/ui/Button";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
 import { PaginationToolbar } from "../components/ui/PaginationToolbar";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
+import { useSiteLanguage } from "../hooks/useSiteLanguage";
+import { useUiDictionary } from "../hooks/useUiDictionary";
 
 type CatalogPerson = {
   id: number;
@@ -26,9 +28,7 @@ type PeopleApiResponse = {
   error?: string;
 };
 
-const SORT_OPTIONS = [{ value: "popularity.desc", label: "Популярные" }] as const;
-
-type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+type SortValue = "popularity.desc";
 const DEFAULT_SORT_BY: SortValue = "popularity.desc";
 const CATALOG_PAGE_SIZE = 8;
 const TMDB_PAGE_SIZE = 20;
@@ -36,6 +36,8 @@ const TMDB_MAX_PAGE = 500;
 
 export default function ActorsPage() {
   const router = useRouter();
+  const { language } = useSiteLanguage();
+  const { dictionary } = useUiDictionary();
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortValue>(DEFAULT_SORT_BY);
@@ -51,8 +53,8 @@ export default function ActorsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const sortOptions = useMemo<StyledSelectOption[]>(
-    () => SORT_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
-    [],
+    () => [{ value: "popularity.desc", label: dictionary.actors.sort }],
+    [dictionary.actors.sort],
   );
 
   useEffect(() => {
@@ -81,11 +83,12 @@ export default function ActorsPage() {
           if (submittedQuery.trim()) params.set("query", submittedQuery.trim());
           params.set("sortBy", sortBy);
           params.set("page", String(tmdbPage));
+          params.set("language", language);
 
           const response = await fetch(`/api/tmdb/people?${params.toString()}`);
           const data = (await response.json()) as PeopleApiResponse;
           if (!response.ok) {
-            throw new Error(data.error || "Не удалось загрузить каталог актеров TMDB");
+            throw new Error(data.error || "Failed to load TMDB people catalog");
           }
           return { tmdbPage, data };
         };
@@ -128,7 +131,7 @@ export default function ActorsPage() {
           return;
         }
         setItems([]);
-        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить актеров");
+        setError(loadError instanceof Error ? loadError.message : "Failed to load people");
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -141,7 +144,7 @@ export default function ActorsPage() {
     return () => {
       isMounted = false;
     };
-  }, [submittedQuery, sortBy, page, visiblePages]);
+  }, [submittedQuery, sortBy, page, visiblePages, language]);
 
   const hasFilters = Boolean(submittedQuery.trim());
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
@@ -159,8 +162,8 @@ export default function ActorsPage() {
   return (
     <PageShell>
       <div className="space-y-2">
-        <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог актеров TMDB</h1>
-        <p className="text-sm text-slate-300">Ищите актеров и открывайте их фильмографию.</p>
+        <h1 className="text-3xl font-extrabold sm:text-4xl">{dictionary.actors.title}</h1>
+        <p className="text-sm text-slate-300">{dictionary.actors.subtitle}</p>
       </div>
 
       <form
@@ -175,7 +178,7 @@ export default function ActorsPage() {
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Имя актера"
+          placeholder={dictionary.actors.searchPlaceholder}
           className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
         />
 
@@ -187,21 +190,21 @@ export default function ActorsPage() {
             setSortBy(nextValue as SortValue);
           }}
           options={sortOptions}
-          placeholder="Сортировка"
+          placeholder={dictionary.actors.sort}
         />
 
         <Button variant="cta" className="sm:col-span-2 lg:col-span-1">
-          Найти
+          {dictionary.actors.search}
         </Button>
       </form>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {isLoading ? (
-          <p>Загрузка...</p>
+          <p>{dictionary.common.loading}</p>
         ) : (
           <div className="text-sm">
-            <p>Найдено всего: {totalResultsRaw.toLocaleString("ru-RU")}</p>
-            <p className="text-slate-400">Доступно для просмотра: {totalResults.toLocaleString("ru-RU")}</p>
+            <p>{dictionary.actors.totalFound}: {totalResultsRaw.toLocaleString("ru-RU")}</p>
+            <p className="text-slate-400">{dictionary.actors.totalAvailable}: {totalResults.toLocaleString("ru-RU")}</p>
           </div>
         )}
 
@@ -212,6 +215,9 @@ export default function ActorsPage() {
           pageInput={pageInput}
           leftPages={leftPages}
           rightPages={rightPages}
+          label={dictionary.actors.pages}
+          goToLabel={dictionary.actors.goto}
+          pageInputAria={dictionary.actors.pageInputAria}
           onPageInputChange={setPageInput}
           onGoToPage={goToPage}
           onSubmitPage={() => {
@@ -228,7 +234,7 @@ export default function ActorsPage() {
       {error ? <ErrorCard>{error}</ErrorCard> : null}
 
       {!isLoading && !error && items.length === 0 ? (
-        <InfoCard>{hasFilters ? "По текущему запросу актеры не найдены." : "Сейчас актеры недоступны."}</InfoCard>
+        <InfoCard>{hasFilters ? dictionary.actors.notFoundByFilters : dictionary.actors.unavailable}</InfoCard>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -238,8 +244,8 @@ export default function ActorsPage() {
             imageSrc={failedImages[person.id] ? "/placeholders/avatar.svg" : person.profile}
             imageAlt={person.name}
             title={person.name}
-            meta={`${person.department || "Актер"} | популярность ${person.popularity.toFixed(1)}`}
-            description={person.knownFor.length ? person.knownFor.join(" • ") : "Карьера обновляется."}
+            meta={`${person.department || dictionary.actors.actorFallback} | ${dictionary.actors.popularity} ${person.popularity.toFixed(1)}`}
+            description={person.knownFor.length ? person.knownFor.join(" • ") : dictionary.actors.careerUpdating}
             onActivate={() => router.push(`/actors/${person.id}`)}
             imageProps={{
               unoptimized: true,
@@ -258,11 +264,10 @@ export default function ActorsPage() {
             onClick={() => setVisiblePages((value) => Math.min(value + 1, totalPages - page + 1))}
             className="rounded-2xl border border-white/15 bg-slate-900/70 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-sky-300/60 hover:bg-slate-900"
           >
-            Показать ещё {CATALOG_PAGE_SIZE}
+            {dictionary.actors.showMore} {CATALOG_PAGE_SIZE}
           </button>
         </div>
       ) : null}
     </PageShell>
   );
 }
-

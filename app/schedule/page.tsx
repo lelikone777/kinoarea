@@ -6,6 +6,7 @@ import Image from "next/image";
 import { PageShell } from "../components/layout/PageShell";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
+import { useUiDictionary } from "../hooks/useUiDictionary";
 
 type City = { id: string; name: string };
 type Cinema = { id: string; name: string; chain: string; address: string };
@@ -42,15 +43,16 @@ function toDayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function formatDayLabel(date: Date) {
-  return date.toLocaleDateString("ru-RU", { weekday: "short", day: "2-digit", month: "short" });
+function formatDayLabel(date: Date, language: string) {
+  return date.toLocaleDateString(language, { weekday: "short", day: "2-digit", month: "short" });
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+function formatTime(iso: string, language: string) {
+  return new Date(iso).toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function SchedulePage() {
+  const { language, dictionary } = useUiDictionary();
   const [cityId, setCityId] = useState("msk");
   const [day, setDay] = useState(() => toDayKey(new Date()));
   const [data, setData] = useState<DemoScheduleResponse | null>(null);
@@ -62,9 +64,12 @@ export default function SchedulePage() {
     return Array.from({ length: 3 }, (_, idx) => {
       const d = new Date(base);
       d.setDate(d.getDate() + idx);
-      return { key: toDayKey(d), label: idx === 0 ? `Сегодня, ${formatDayLabel(d)}` : formatDayLabel(d) };
+      return {
+        key: toDayKey(d),
+        label: idx === 0 ? `${dictionary.schedule.todayPrefix}, ${formatDayLabel(d, language)}` : formatDayLabel(d, language),
+      };
     });
-  }, []);
+  }, [language, dictionary.schedule.todayPrefix]);
 
   const dayOptions = useMemo<StyledSelectOption[]>(
     () => days.map((d) => ({ value: d.key, label: d.label })),
@@ -81,7 +86,7 @@ export default function SchedulePage() {
         const res = await fetch(`/api/demo/schedule?${params.toString()}`);
         const json = (await res.json()) as DemoScheduleResponse;
         if (!res.ok) {
-          throw new Error(json.error || "Не удалось загрузить демо-расписание.");
+          throw new Error(json.error || "Failed to load schedule.");
         }
         if (mounted) {
           setData(json);
@@ -89,7 +94,7 @@ export default function SchedulePage() {
       } catch (e) {
         if (mounted) {
           setData(null);
-          setError(e instanceof Error ? e.message : "Не удалось загрузить демо-расписание.");
+          setError(e instanceof Error ? e.message : "Failed to load schedule.");
         }
       } finally {
         if (mounted) setIsLoading(false);
@@ -131,31 +136,24 @@ export default function SchedulePage() {
   return (
     <PageShell>
       <div className="space-y-2">
-        <h1 className="text-3xl font-extrabold sm:text-4xl">Расписание сеансов (Demo)</h1>
-        <p className="text-sm text-slate-300">
-          Портфолио-модуль: выбор города, сеанса, мест и оплата через Stripe Test.
-        </p>
+        <h1 className="text-3xl font-extrabold sm:text-4xl">{dictionary.schedule.title}</h1>
+        <p className="text-sm text-slate-300">{dictionary.schedule.subtitle}</p>
       </div>
 
       <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StyledSelect
-          value={cityId}
-          onChange={(nextValue) => setCityId(nextValue)}
-          options={cityOptions}
-          placeholder="Город"
-        />
+        <StyledSelect value={cityId} onChange={(nextValue) => setCityId(nextValue)} options={cityOptions} placeholder={dictionary.schedule.city} />
 
-        <StyledSelect value={day} onChange={(nextValue) => setDay(nextValue)} options={dayOptions} placeholder="День" />
+        <StyledSelect value={day} onChange={(nextValue) => setDay(nextValue)} options={dayOptions} placeholder={dictionary.schedule.day} />
 
         <div className="hidden items-center justify-end text-sm text-slate-300 lg:flex">
-          {isLoading ? "Загрузка..." : `${moviesWithScreenings.length} фильмов`}
+          {isLoading ? dictionary.common.loading : `${moviesWithScreenings.length} ${dictionary.schedule.moviesCountSuffix}`}
         </div>
       </div>
 
       {error ? <ErrorCard>{error}</ErrorCard> : null}
 
       {!isLoading && !error && moviesWithScreenings.length === 0 ? (
-        <InfoCard>Сеансов на выбранный день нет (demo).</InfoCard>
+        <InfoCard>{dictionary.schedule.noSessions}</InfoCard>
       ) : null}
 
       <div className="grid gap-4">
@@ -163,10 +161,7 @@ export default function SchedulePage() {
           const genres = movie.genres.join(" • ");
 
           return (
-            <section
-              key={movie.id}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60"
-            >
+            <section key={movie.id} className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60">
               <div className="grid gap-4 p-4 sm:grid-cols-[160px_1fr]">
                 <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                   <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
@@ -175,7 +170,7 @@ export default function SchedulePage() {
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
                     <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{movie.ageRating}</span>
-                    <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{movie.runtimeMin} мин</span>
+                    <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{movie.runtimeMin} min</span>
                     <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{genres}</span>
                   </div>
 
@@ -187,8 +182,8 @@ export default function SchedulePage() {
                   <div className="flex flex-wrap gap-2">
                     {screenings.map((s) => {
                       const cinema = cinemasById.get(s.cinemaId);
-                      const label = `${formatTime(s.startsAt)} • ${s.format}`;
-                      const hint = cinema ? `${cinema.chain}: ${cinema.name}` : "Кинотеатр";
+                      const label = `${formatTime(s.startsAt, language)} • ${s.format}`;
+                      const hint = cinema ? `${cinema.chain}: ${cinema.name}` : dictionary.schedule.cinemaFallback;
                       const min = Math.min(s.pricesRub.standard, s.pricesRub.premium);
 
                       return (
@@ -196,12 +191,12 @@ export default function SchedulePage() {
                           key={s.id}
                           href={`/schedule/${s.id}`}
                           className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-sky-300/60 hover:bg-white/10"
-                          aria-label={`Выбрать места: ${movie.title}, ${hint}, ${label}`}
+                          aria-label={`${movie.title}, ${hint}, ${label}`}
                         >
                           <span className="text-white">{label}</span>
                           <span className="text-xs text-slate-300">{hint}</span>
                           <span className="ml-1 rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs font-bold text-emerald-200">
-                            от {min}₽
+                            {dictionary.schedule.fromPrice} {min}₽
                           </span>
                         </Link>
                       );
@@ -216,10 +211,8 @@ export default function SchedulePage() {
 
       {data ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-slate-300">
-          <p className="font-semibold text-white">Demo-заметка</p>
-          <p className="mt-1">
-            Данные расписания и залы сгенерированы для портфолио. Покупка будет через Stripe test mode.
-          </p>
+          <p className="font-semibold text-white">{dictionary.schedule.demoNoteTitle}</p>
+          <p className="mt-1">{dictionary.schedule.demoNoteBody}</p>
         </div>
       ) : null}
     </PageShell>

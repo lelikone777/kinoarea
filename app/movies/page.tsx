@@ -8,6 +8,8 @@ import { Button } from "../components/ui/Button";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
 import { PaginationToolbar } from "../components/ui/PaginationToolbar";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
+import { useSiteLanguage } from "../hooks/useSiteLanguage";
+import { useUiDictionary } from "../hooks/useUiDictionary";
 
 type CatalogMovie = {
   id: number;
@@ -59,6 +61,8 @@ const TMDB_MAX_PAGE = 500;
 
 export default function MoviesPage() {
   const router = useRouter();
+  const { dictionary } = useUiDictionary();
+  const { language } = useSiteLanguage();
   const currentYear = new Date().getFullYear();
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -83,12 +87,12 @@ export default function MoviesPage() {
     [currentYear],
   );
   const yearOptions = useMemo<StyledSelectOption[]>(
-    () => [{ value: "", label: "Любой год" }, ...years.map((value) => ({ value, label: value }))],
-    [years],
+    () => [{ value: "", label: dictionary.movies.anyYear }, ...years.map((value) => ({ value, label: value }))],
+    [years, dictionary.movies.anyYear],
   );
   const genreOptions = useMemo<StyledSelectOption[]>(
-    () => [{ value: "", label: "Все жанры" }, ...genres.map((genre) => ({ value: String(genre.id), label: genre.name }))],
-    [genres],
+    () => [{ value: "", label: dictionary.movies.allGenres }, ...genres.map((genre) => ({ value: String(genre.id), label: genre.name }))],
+    [genres, dictionary.movies.allGenres],
   );
   const sortOptions = useMemo<StyledSelectOption[]>(
     () => SORT_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
@@ -133,6 +137,7 @@ export default function MoviesPage() {
           if (genreId) params.set("genreId", genreId);
           params.set("sortBy", sortBy);
           params.set("page", String(tmdbPage));
+          params.set("language", language);
 
           const response = await fetch(`/api/tmdb/movies?${params.toString()}`);
           const data = (await response.json()) as MoviesApiResponse;
@@ -194,7 +199,7 @@ export default function MoviesPage() {
     return () => {
       isMounted = false;
     };
-  }, [submittedQuery, year, genreId, sortBy, page, visiblePages, isSortInitialized]);
+  }, [submittedQuery, year, genreId, sortBy, page, visiblePages, isSortInitialized, language]);
 
   const hasFilters = Boolean(submittedQuery.trim() || year || genreId);
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
@@ -211,8 +216,8 @@ export default function MoviesPage() {
   return (
     <PageShell>
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог фильмов TMDB</h1>
-          <p className="text-sm text-slate-300">Ищите и фильтруйте фильмы с помощью API The Movie Database.</p>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">{dictionary.movies.title}</h1>
+          <p className="text-sm text-slate-300">{dictionary.movies.subtitle}</p>
         </div>
 
         <form
@@ -227,7 +232,7 @@ export default function MoviesPage() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Название фильма"
+            placeholder={dictionary.movies.searchPlaceholder}
             className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
           />
 
@@ -239,7 +244,7 @@ export default function MoviesPage() {
               setYear(nextValue);
             }}
             options={yearOptions}
-            placeholder="Любой год"
+            placeholder={dictionary.movies.anyYear}
           />
 
           <StyledSelect
@@ -250,7 +255,7 @@ export default function MoviesPage() {
               setGenreId(nextValue);
             }}
             options={genreOptions}
-            placeholder="Все жанры"
+            placeholder={dictionary.movies.allGenres}
           />
 
           <StyledSelect
@@ -261,10 +266,10 @@ export default function MoviesPage() {
               setSortBy(nextValue as SortValue);
             }}
             options={sortOptions}
-            placeholder="Сортировка"
+            placeholder={dictionary.movies.sort}
           />
 
-          <Button variant="cta">Найти</Button>
+          <Button variant="cta">{dictionary.movies.search}</Button>
         </form>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -272,8 +277,8 @@ export default function MoviesPage() {
             <p>Загрузка...</p>
           ) : (
             <div className="text-sm">
-              <p>Найдено всего: {totalResultsRaw.toLocaleString("ru-RU")}</p>
-              <p className="text-slate-400">Доступно для просмотра: {totalResults.toLocaleString("ru-RU")}</p>
+              <p>{dictionary.movies.totalFound}: {totalResultsRaw.toLocaleString("ru-RU")}</p>
+              <p className="text-slate-400">{dictionary.movies.totalAvailable}: {totalResults.toLocaleString("ru-RU")}</p>
             </div>
           )}
 
@@ -286,6 +291,9 @@ export default function MoviesPage() {
             rightPages={rightPages}
             onPageInputChange={setPageInput}
             onGoToPage={goToPage}
+            label={dictionary.movies.pages}
+            goToLabel={dictionary.movies.goto}
+            pageInputAria={dictionary.movies.pageInputAria}
             onSubmitPage={() => {
               const parsed = Number.parseInt(pageInput.trim(), 10);
               if (!Number.isFinite(parsed)) {
@@ -301,7 +309,7 @@ export default function MoviesPage() {
 
         {!isLoading && !error && items.length === 0 ? (
           <InfoCard>
-            {hasFilters ? "По текущим фильтрам фильмы не найдены." : "Сейчас фильмы недоступны."}
+            {hasFilters ? dictionary.movies.notFoundByFilters : dictionary.movies.unavailable}
           </InfoCard>
         ) : null}
 
@@ -312,8 +320,8 @@ export default function MoviesPage() {
               imageSrc={movie.poster}
               imageAlt={movie.title}
               title={movie.title}
-              meta={`${movie.year ?? "Год неизвестен"} | рейтинг ${movie.rating.toFixed(1)}`}
-              description={movie.overview || "Описание отсутствует."}
+              meta={`${movie.year ?? dictionary.movies.yearUnknown} | ${dictionary.movies.rating} ${movie.rating.toFixed(1)}`}
+              description={movie.overview || dictionary.movies.noDescription}
               onActivate={() => router.push(`/movies/${movie.id}`)}
             />
           ))}
@@ -326,7 +334,7 @@ export default function MoviesPage() {
               onClick={() => setVisiblePages((value) => Math.min(value + 1, totalPages - page + 1))}
               className="rounded-2xl border border-white/15 bg-slate-900/70 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-sky-300/60 hover:bg-slate-900"
             >
-              Показать ещё {CATALOG_PAGE_SIZE}
+              {dictionary.movies.showMore} {CATALOG_PAGE_SIZE}
             </button>
           </div>
         ) : null}

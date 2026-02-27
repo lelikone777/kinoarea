@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { navLinks } from "../../data/content";
 import { getMovieFullDetails } from "../../lib/tmdb";
+import { getUiDictionary } from "../../lib/i18n";
+import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
@@ -16,16 +19,16 @@ function formatRuntime(minutes?: number) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-function formatDate(date?: string) {
+function formatDate(date?: string, language = "en-US") {
   if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US");
+  return new Date(date).toLocaleDateString(language);
 }
 
-function formatMoney(amount?: number) {
+function formatMoney(amount?: number, locale = "en-US", currency = "USD") {
   if (!amount) return "N/A";
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "USD",
+    currency,
     maximumFractionDigits: 0,
   }).format(amount);
 }
@@ -33,13 +36,15 @@ function formatMoney(amount?: number) {
 export async function generateMetadata({ params }: MoviePageProps): Promise<Metadata> {
   const { id } = await params;
   const movieId = Number(id);
+  const cookieStore = await cookies();
+  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
 
   if (!Number.isFinite(movieId)) {
     return { title: "Movie not found" };
   }
 
   try {
-    const movie = await getMovieFullDetails(movieId);
+    const movie = await getMovieFullDetails(movieId, language);
     return {
       title: `${movie.title}${movie.year ? ` (${movie.year})` : ""} | TMDB`,
       description: movie.overview || `Movie details for ${movie.title}`,
@@ -52,16 +57,20 @@ export async function generateMetadata({ params }: MoviePageProps): Promise<Meta
 export default async function MovieDetailsPage({ params }: MoviePageProps) {
   const { id } = await params;
   const movieId = Number(id);
+  const cookieStore = await cookies();
+  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const dictionary = getUiDictionary(language);
   if (!Number.isFinite(movieId)) notFound();
 
   let movie;
   try {
-    movie = await getMovieFullDetails(movieId);
+    movie = await getMovieFullDetails(movieId, language);
   } catch {
     notFound();
   }
 
   const trailer = movie.trailers[0];
+  const currency = language === "ru-RU" ? "RUB" : "USD";
 
   return (
     <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
@@ -69,7 +78,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
 
       <main className="relative z-10 mx-auto flex-1 max-w-6xl space-y-8 px-5 pb-24 pt-10">
         <Link href="/movies" className="inline-flex text-sm text-sky-300 hover:text-sky-200">
-          Back to catalog
+          {dictionary.movieDetails.back}
         </Link>
 
         <section className="grid gap-6 rounded-3xl border border-white/10 bg-slate-900/60 p-5 md:grid-cols-[320px_1fr]">
@@ -81,7 +90,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
             <div>
               <h1 className="text-3xl font-extrabold">{movie.title}</h1>
               <p className="text-slate-300">
-                {movie.year ?? "N/A"} | {formatRuntime(movie.runtime)} | TMDB {movie.voteAverage.toFixed(1)}
+                {movie.year ?? dictionary.common.unknown} | {formatRuntime(movie.runtime)} | TMDB {movie.voteAverage.toFixed(1)}
               </p>
             </div>
 
@@ -93,15 +102,15 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
               ))}
             </div>
 
-            <p className="text-slate-200">{movie.overview || "No overview available."}</p>
+            <p className="text-slate-200">{movie.overview || dictionary.movieDetails.noOverview}</p>
 
             <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-              <p><span className="text-white">Release date:</span> {formatDate(movie.releaseDate)}</p>
-              <p><span className="text-white">Status:</span> {movie.status || "N/A"}</p>
-              <p><span className="text-white">Budget:</span> {formatMoney(movie.budget)}</p>
-              <p><span className="text-white">Revenue:</span> {formatMoney(movie.revenue)}</p>
-              <p><span className="text-white">Language:</span> {movie.originalLanguage || "N/A"}</p>
-              <p><span className="text-white">Vote count:</span> {movie.voteCount ?? 0}</p>
+              <p><span className="text-white">{dictionary.movieDetails.releaseDate}:</span> {formatDate(movie.releaseDate, language)}</p>
+              <p><span className="text-white">{dictionary.movieDetails.status}:</span> {movie.status || dictionary.common.unknown}</p>
+              <p><span className="text-white">{dictionary.movieDetails.budget}:</span> {formatMoney(movie.budget, language, currency)}</p>
+              <p><span className="text-white">{dictionary.movieDetails.revenue}:</span> {formatMoney(movie.revenue, language, currency)}</p>
+              <p><span className="text-white">{dictionary.movieDetails.language}:</span> {movie.originalLanguage || dictionary.common.unknown}</p>
+              <p><span className="text-white">{dictionary.movieDetails.voteCount}:</span> {movie.voteCount ?? 0}</p>
             </div>
 
             {movie.homepage ? (
@@ -111,7 +120,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
                 rel="noreferrer"
                 className="inline-flex rounded-xl border border-white/20 px-3 py-2 text-sm hover:border-white/40"
               >
-                Official site
+                {dictionary.movieDetails.officialSite}
               </a>
             ) : null}
           </div>
@@ -119,7 +128,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
 
         {trailer ? (
           <section className="space-y-3 rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="text-xl font-bold">Trailer</h2>
+            <h2 className="text-xl font-bold">{dictionary.movieDetails.trailer}</h2>
             <div className="aspect-video overflow-hidden rounded-2xl border border-white/10">
               <iframe
                 className="h-full w-full"
@@ -134,7 +143,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
 
         <section className="grid gap-6 md:grid-cols-2">
           <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="mb-3 text-xl font-bold">Cast</h2>
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.cast}</h2>
             <div className="space-y-2">
               {movie.cast.length ? (
                 movie.cast.slice(0, 12).map((actor) => (
@@ -148,31 +157,31 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
                     </div>
                     <div>
                       <p className="text-sm font-semibold">{actor.name}</p>
-                      <p className="text-xs text-slate-400">{actor.character || "Unknown role"}</p>
+                      <p className="text-xs text-slate-400">{actor.character || dictionary.movieDetails.unknownRole}</p>
                     </div>
                   </Link>
                 ))
               ) : (
-                <p className="text-sm text-slate-400">No cast data.</p>
+                <p className="text-sm text-slate-400">{dictionary.movieDetails.noCast}</p>
               )}
             </div>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="mb-3 text-xl font-bold">Crew</h2>
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.crew}</h2>
             <div className="space-y-2">
               {movie.crew.length ? (
                 movie.crew.slice(0, 12).map((member) => (
                   <div key={`${member.id}-${member.name}-${member.job}`} className="rounded-xl bg-white/5 p-2">
                     <p className="text-sm font-semibold">{member.name}</p>
                     <p className="text-xs text-slate-400">
-                      {member.job || "Unknown job"}
+                      {member.job || dictionary.movieDetails.unknownJob}
                       {member.department ? ` | ${member.department}` : ""}
                     </p>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-slate-400">No crew data.</p>
+                <p className="text-sm text-slate-400">{dictionary.movieDetails.noCrew}</p>
               )}
             </div>
           </div>
@@ -180,7 +189,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
 
         <section className="grid gap-6 md:grid-cols-2">
           <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="mb-3 text-xl font-bold">Similar</h2>
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.similar}</h2>
             <div className="grid grid-cols-2 gap-3">
               {movie.similar.slice(0, 6).map((item) => (
                 <Link
@@ -201,7 +210,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="mb-3 text-xl font-bold">Recommendations</h2>
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.recommendations}</h2>
             <div className="grid grid-cols-2 gap-3">
               {movie.recommendations.slice(0, 6).map((item) => (
                 <Link
@@ -227,3 +236,4 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
     </div>
   );
 }
+

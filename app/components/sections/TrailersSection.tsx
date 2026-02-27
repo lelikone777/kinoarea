@@ -1,7 +1,10 @@
-﻿import Image from "next/image";
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
 import { CalendarIcon, PlayIcon, ArrowRightIcon } from "../icons";
 import type { Trailer } from "../../data/content";
+import { useUiDictionary } from "@/app/hooks/useUiDictionary";
 
 export type TrailerHero = {
   title: string;
@@ -25,7 +28,7 @@ type TrailersSectionProps = {
 };
 
 function toTrailerSearchUrl(title: string) {
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} трейлер`)}`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} trailer`)}`;
 }
 
 function getWatchUrl(input: { title: string; trailerKey?: string; trailerUrl?: string }) {
@@ -38,16 +41,16 @@ function getWatchUrl(input: { title: string; trailerKey?: string; trailerUrl?: s
   return toTrailerSearchUrl(input.title);
 }
 
-function toRussianTrailerLabel(value: string) {
+function normalizeTrailerType(value: string) {
   const normalized = value.trim().toLowerCase();
-  if (normalized === "trailer") return "Трейлер";
-  if (normalized === "official trailer") return "Официальный трейлер";
-  if (normalized === "teaser") return "Тизер";
-  if (normalized === "clip") return "Фрагмент";
+  if (normalized === "official trailer") return "Trailer";
+  if (normalized === "teaser") return "Teaser";
+  if (normalized === "clip") return "Clip";
   return value;
 }
 
 export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
+  const { dictionary } = useUiDictionary();
   const items = trailers.slice(0, 5);
 
   const heroWatchUrl = getWatchUrl(hero);
@@ -56,12 +59,12 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
   return (
     <section className="mt-14 space-y-6" id="trailers-week">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-extrabold">Трейлеры недели</h2>
+        <h2 className="text-2xl font-extrabold">{dictionary.trailers.title}</h2>
         <Link
           href="/movies"
           className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/5"
         >
-          Все трейлеры
+          {dictionary.trailers.all}
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
         </Link>
       </div>
@@ -79,9 +82,9 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/70 to-transparent" />
             {hero.movieId ? (
-              <Link href={heroMovieHref} className="absolute inset-0 z-20" aria-label={`Открыть страницу фильма ${hero.title}`} />
+              <Link href={heroMovieHref} className="absolute inset-0 z-20" aria-label={`Open ${hero.title}`} />
             ) : (
-              <a href={heroWatchUrl} target="_blank" rel="noreferrer" className="absolute inset-0 z-20" aria-label={`Открыть трейлер ${hero.title}`} />
+              <a href={heroWatchUrl} target="_blank" rel="noreferrer" className="absolute inset-0 z-20" aria-label={`Open trailer ${hero.title}`} />
             )}
 
             <div className="absolute left-6 top-6 z-30 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200 backdrop-blur">
@@ -90,8 +93,8 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
             </div>
 
             <div className="pointer-events-none absolute right-6 top-6 z-30 flex flex-wrap items-center justify-end gap-3 text-xs text-slate-300 sm:max-w-sm">
-              <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">Экшн</span>
-              <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">Драма</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{dictionary.trailers.action}</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{dictionary.trailers.drama}</span>
               <span className="flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 font-semibold text-emerald-300 backdrop-blur">
                 <PlayIcon className="h-4 w-4" />
                 {hero.duration}
@@ -105,12 +108,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                     <h3 className="text-3xl font-extrabold transition hover:text-sky-300 sm:text-4xl">{hero.title}</h3>
                   </Link>
                 ) : (
-                  <a
-                    href={heroWatchUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="pointer-events-auto inline-block"
-                  >
+                  <a href={heroWatchUrl} target="_blank" rel="noreferrer" className="pointer-events-auto inline-block">
                     <h3 className="text-3xl font-extrabold transition hover:text-sky-300 sm:text-4xl">{hero.title}</h3>
                   </a>
                 )}
@@ -125,14 +123,14 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                   className="group inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-slate-100 transition duration-200 hover:-translate-y-0.5 hover:border-sky-300/70 hover:bg-white/5 hover:shadow-lg hover:shadow-sky-500/20"
                 >
                   <PlayIcon className="h-4 w-4 text-emerald-300 transition group-hover:translate-x-0.5" />
-                  Смотреть
+                  {dictionary.trailers.watch}
                 </a>
                 <Link
                   href={heroMovieHref}
                   className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/50"
                 >
                   <CalendarIcon className="h-4 w-4 text-slate-300" />
-                  В расписание
+                  {dictionary.trailers.toSchedule}
                 </Link>
               </div>
 
@@ -179,7 +177,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                     className="absolute right-3 top-3 z-40 inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-emerald-200 backdrop-blur transition hover:bg-black/80"
                   >
                     <PlayIcon className="h-4 w-4" />
-                    {toRussianTrailerLabel(trailer.time)}
+                    {normalizeTrailerType(trailer.time)}
                   </a>
 
                   {trailer.note ? (
@@ -190,23 +188,13 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
 
                   <div className="absolute inset-x-3 bottom-3 z-20 space-y-1">
                     <p className="text-sm font-semibold text-white">{trailer.title}</p>
-                    <p className="text-xs text-slate-400">Выбор редакции и лучшие моменты фильма</p>
+                    <p className="text-xs text-slate-400">{dictionary.trailers.editorsPick}</p>
                   </div>
 
                   {detailsHref ? (
-                    <Link
-                      href={detailsHref}
-                      className="absolute inset-0 z-30"
-                      aria-label={`Открыть страницу фильма ${trailer.title}`}
-                    />
+                    <Link href={detailsHref} className="absolute inset-0 z-30" aria-label={`Open ${trailer.title}`} />
                   ) : (
-                    <a
-                      href={watchUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="absolute inset-0 z-30"
-                      aria-label={`Открыть трейлер ${trailer.title}`}
-                    />
+                    <a href={watchUrl} target="_blank" rel="noreferrer" className="absolute inset-0 z-30" aria-label={`Open trailer ${trailer.title}`} />
                   )}
                 </div>
               </div>
@@ -217,3 +205,4 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
     </section>
   );
 }
+

@@ -2,70 +2,66 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { navLinks } from "../../data/content";
 import { getPersonFullDetails } from "../../lib/tmdb";
+import { getUiDictionary } from "../../lib/i18n";
+import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
 
 type ActorPageProps = {
   params: Promise<{ id: string }>;
 };
 
-function formatDate(date?: string) {
+function formatDate(date?: string, language = "ru-RU") {
   if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("ru-RU");
+  return new Date(date).toLocaleDateString(language);
 }
 
 export async function generateMetadata({ params }: ActorPageProps): Promise<Metadata> {
   const { id } = await params;
   const personId = Number(id);
+  const cookieStore = await cookies();
+  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
 
   if (!Number.isFinite(personId) || personId <= 0) {
-    return { title: "Актер не найден" };
+    return { title: "Actor not found" };
   }
 
   try {
-    const person = await getPersonFullDetails(personId);
+    const person = await getPersonFullDetails(personId, language);
     return {
-      title: `${person.name} | Актер | TMDB`,
-      description: person.biography || `Профиль актера ${person.name}`,
+      title: `${person.name} | TMDB`,
+      description: person.biography || `${person.name} profile`,
     };
   } catch {
-    return { title: "Карточка актера" };
+    return { title: "Actor profile" };
   }
 }
 
 export default async function ActorDetailsPage({ params }: ActorPageProps) {
   const { id } = await params;
   const personId = Number(id);
+  const cookieStore = await cookies();
+  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const dictionary = getUiDictionary(language);
   if (!Number.isFinite(personId) || personId <= 0) notFound();
 
   let person;
   try {
-    person = await getPersonFullDetails(personId);
+    person = await getPersonFullDetails(personId, language);
   } catch {
     notFound();
   }
 
   const socialLinks = [
-    person.imdbId
-      ? { label: "IMDb", href: `https://www.imdb.com/name/${person.imdbId}` }
-      : null,
-    person.social.instagram
-      ? { label: "Instagram", href: `https://www.instagram.com/${person.social.instagram}` }
-      : null,
-    person.social.twitter
-      ? { label: "X", href: `https://x.com/${person.social.twitter}` }
-      : null,
-    person.social.facebook
-      ? { label: "Facebook", href: `https://www.facebook.com/${person.social.facebook}` }
-      : null,
-    person.social.youtube
-      ? { label: "YouTube", href: `https://www.youtube.com/${person.social.youtube}` }
-      : null,
-    person.social.tiktok
-      ? { label: "TikTok", href: `https://www.tiktok.com/@${person.social.tiktok}` }
-      : null,
+    person.imdbId ? { label: "IMDb", href: `https://www.imdb.com/name/${person.imdbId}` } : null,
+    person.social.instagram ? { label: "Instagram", href: `https://www.instagram.com/${person.social.instagram}` } : null,
+    person.social.twitter ? { label: "X", href: `https://x.com/${person.social.twitter}` } : null,
+    person.social.facebook ? { label: "Facebook", href: `https://www.facebook.com/${person.social.facebook}` } : null,
+    person.social.youtube ? { label: "YouTube", href: `https://www.youtube.com/${person.social.youtube}` } : null,
+    person.social.tiktok ? { label: "TikTok", href: `https://www.tiktok.com/@${person.social.tiktok}` } : null,
   ].filter(Boolean) as { label: string; href: string }[];
 
   const filmography = person.castCredits.slice(0, 16);
@@ -77,7 +73,7 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
 
       <main className="relative z-10 mx-auto flex-1 max-w-6xl space-y-8 px-5 pb-24 pt-10">
         <Link href="/actors" className="inline-flex text-sm text-sky-300 hover:text-sky-200">
-          Назад в каталог актеров
+          {dictionary.actorDetails.back}
         </Link>
 
         <section className="grid gap-6 rounded-3xl border border-white/10 bg-slate-900/60 p-5 md:grid-cols-[300px_1fr]">
@@ -89,7 +85,7 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
             <div>
               <h1 className="text-3xl font-extrabold">{person.name}</h1>
               <p className="text-slate-300">
-                {person.department || "Актер"} | популярность {person.popularity?.toFixed(1) ?? "N/A"}
+                {person.department || dictionary.actorDetails.actorFallback} | {dictionary.actorDetails.popularity} {person.popularity?.toFixed(1) ?? dictionary.common.unknown}
               </p>
             </div>
 
@@ -106,10 +102,10 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
             <p className="text-slate-200">{person.biography}</p>
 
             <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-              <p><span className="text-white">Дата рождения:</span> {formatDate(person.birthday)}</p>
-              <p><span className="text-white">Место рождения:</span> {person.placeOfBirth || "N/A"}</p>
-              <p><span className="text-white">Дата смерти:</span> {formatDate(person.deathday)}</p>
-              <p><span className="text-white">IMDb:</span> {person.imdbId || "N/A"}</p>
+              <p><span className="text-white">{dictionary.actorDetails.birthDate}:</span> {formatDate(person.birthday, language)}</p>
+              <p><span className="text-white">{dictionary.actorDetails.birthPlace}:</span> {person.placeOfBirth || dictionary.common.unknown}</p>
+              <p><span className="text-white">{dictionary.actorDetails.deathDate}:</span> {formatDate(person.deathday, language)}</p>
+              <p><span className="text-white">IMDb:</span> {person.imdbId || dictionary.common.unknown}</p>
             </div>
 
             {socialLinks.length ? (
@@ -131,7 +127,7 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-          <h2 className="mb-3 text-xl font-bold">Известен по</h2>
+          <h2 className="mb-3 text-xl font-bold">{dictionary.actorDetails.knownFor}</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {person.knownFor.length ? (
               person.knownFor.map((movie) => (
@@ -146,20 +142,20 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
                   <div className="space-y-1 p-3">
                     <p className="line-clamp-1 text-sm font-semibold">{movie.title}</p>
                     <p className="text-xs text-slate-400">
-                      {movie.year ?? "Год неизвестен"} | рейтинг {movie.rating.toFixed(1)}
+                      {movie.year ?? dictionary.actorDetails.yearUnknown} | {dictionary.actorDetails.rating} {movie.rating.toFixed(1)}
                     </p>
                   </div>
                 </Link>
               ))
             ) : (
-              <p className="text-sm text-slate-400">Данные о работах пока недоступны.</p>
+              <p className="text-sm text-slate-400">{dictionary.actorDetails.noKnownFor}</p>
             )}
           </div>
         </section>
 
         <section className="grid gap-6 md:grid-cols-2">
           <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="mb-3 text-xl font-bold">Фильмография (актер)</h2>
+            <h2 className="mb-3 text-xl font-bold">{dictionary.actorDetails.filmography}</h2>
             <div className="space-y-2">
               {filmography.length ? (
                 filmography.map((movie) => (
@@ -170,19 +166,19 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
                   >
                     <p className="text-sm font-semibold">{movie.title}</p>
                     <p className="text-xs text-slate-400">
-                      {movie.year ?? "Год неизвестен"}
-                      {movie.character ? ` | роль: ${movie.character}` : ""}
+                      {movie.year ?? dictionary.actorDetails.yearUnknown}
+                      {movie.character ? ` | ${dictionary.actorDetails.role}: ${movie.character}` : ""}
                     </p>
                   </Link>
                 ))
               ) : (
-                <p className="text-sm text-slate-400">Нет данных о ролях.</p>
+                <p className="text-sm text-slate-400">{dictionary.actorDetails.noRoles}</p>
               )}
             </div>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
-            <h2 className="mb-3 text-xl font-bold">За кадром</h2>
+            <h2 className="mb-3 text-xl font-bold">{dictionary.actorDetails.behindScenes}</h2>
             <div className="space-y-2">
               {behindTheScenes.length ? (
                 behindTheScenes.map((movie) => (
@@ -193,13 +189,13 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
                   >
                     <p className="text-sm font-semibold">{movie.title}</p>
                     <p className="text-xs text-slate-400">
-                      {movie.year ?? "Год неизвестен"}
+                      {movie.year ?? dictionary.actorDetails.yearUnknown}
                       {movie.job ? ` | ${movie.job}` : ""}
                     </p>
                   </Link>
                 ))
               ) : (
-                <p className="text-sm text-slate-400">Нет данных по съемочной группе.</p>
+                <p className="text-sm text-slate-400">{dictionary.actorDetails.noCrew}</p>
               )}
             </div>
           </div>
@@ -210,3 +206,4 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
     </div>
   );
 }
+

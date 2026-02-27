@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
+import { useUiDictionary } from "@/app/hooks/useUiDictionary";
 
 type NowPlayingProps = {
   movies: Movie[];
@@ -12,6 +13,7 @@ type NowPlayingProps = {
 };
 
 export function NowPlaying({ movies, filters }: NowPlayingProps) {
+  const { dictionary } = useUiDictionary();
   const premieresFilter = filters[0] ?? "Премьеры";
   const popularFilter = filters[1] ?? "Популярные";
 
@@ -160,17 +162,17 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
     <section>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Горячие сеансы сегодня</p>
-          <h1 className="text-3xl font-extrabold sm:text-4xl">Сейчас в прокате</h1>
+          <p className="text-sm uppercase tracking-[0.18em] text-slate-400">{dictionary.nowPlaying.subtitle}</p>
+          <h1 className="text-3xl font-extrabold sm:text-4xl">{dictionary.nowPlaying.title}</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Смотрите свежие премьеры и выбирайте фильмы по релизу, рейтингу, популярности и жанру.
+            {dictionary.nowPlaying.description}
           </p>
         </div>
         <Link
           href="/movies?sortBy=now_playing.desc"
           className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
         >
-          Полный список
+          {dictionary.nowPlaying.fullList}
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
         </Link>
       </div>
@@ -215,7 +217,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
                 >
                   <span>{filter}</span>
                   {effectiveActiveFilter === filter ? (
-                    <span className="text-xs font-bold">Выбрано</span>
+                    <span className="text-xs font-bold">{dictionary.nowPlaying.selected}</span>
                   ) : null}
                 </button>
               ))}
@@ -247,7 +249,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
 
       {filteredMovies.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
-          По выбранному фильтру фильмы пока не найдены.
+          {dictionary.nowPlaying.noResults}
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -293,7 +295,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
                         </span>
                       </span>
                       <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
-                        Подробнее
+                        {dictionary.nowPlaying.details}
                       </span>
                     </div>
                     <p className="mt-3 text-lg font-bold leading-6 text-white">{movie.title}</p>

@@ -19,6 +19,9 @@ import {
   getPopularPeople,
   isTmdbReachable,
 } from "./lib/tmdb";
+import { cookies } from "next/headers";
+import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
+import { getUiDictionary } from "./lib/i18n";
 import { PageShell } from "./components/layout/PageShell";
 import { BoxOfficeSection } from "./components/sections/BoxOfficeSection";
 import { NewsSection } from "./components/sections/NewsSection";
@@ -30,6 +33,9 @@ import { TrailersSection } from "./components/sections/TrailersSection";
 import { UpcomingSection } from "./components/sections/UpcomingSection";
 
 export default async function Home() {
+  const cookieStore = await cookies();
+  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const dictionary = getUiDictionary(language);
   const hasTmdbAuth = Boolean(process.env.TMDB_ACCESS_TOKEN || process.env.TMDB_API_KEY);
   const canUseTmdb = hasTmdbAuth ? await isTmdbReachable() : false;
 
@@ -43,14 +49,14 @@ export default async function Home() {
     peopleMonth,
     peopleYear,
   ] = await Promise.all([
-    canUseTmdb ? getPopularMovies(60).catch(() => popularMovies) : Promise.resolve(popularMovies),
-    canUseTmdb ? getNowPlayingMovies().catch(() => nowPlaying) : Promise.resolve(nowPlaying),
-    canUseTmdb ? getUpcomingMovies().catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
-    canUseTmdb ? getWeeklyTrailers().catch(() => trailers) : Promise.resolve(trailers),
-    canUseTmdb ? getFeaturedTrailerHero().catch(() => null) : Promise.resolve(null),
-    canUseTmdb ? getPopularPeople(10, 1).catch(() => null) : Promise.resolve(null),
-    canUseTmdb ? getPopularPeople(10, 2).catch(() => null) : Promise.resolve(null),
-    canUseTmdb ? getPopularPeople(10, 3).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularMovies(60, undefined, language).catch(() => popularMovies) : Promise.resolve(popularMovies),
+    canUseTmdb ? getNowPlayingMovies(undefined, language).catch(() => nowPlaying) : Promise.resolve(nowPlaying),
+    canUseTmdb ? getUpcomingMovies(undefined, language).catch(() => upcomingMovies) : Promise.resolve(upcomingMovies),
+    canUseTmdb ? getWeeklyTrailers(undefined, language).catch(() => trailers) : Promise.resolve(trailers),
+    canUseTmdb ? getFeaturedTrailerHero(language).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularPeople(10, 1, language).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularPeople(10, 2, language).catch(() => null) : Promise.resolve(null),
+    canUseTmdb ? getPopularPeople(10, 3, language).catch(() => null) : Promise.resolve(null),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
@@ -66,7 +72,7 @@ export default async function Home() {
     ...peopleBoard.map((p) => ({
       name: p.name,
       role: p.role,
-      knownFor: "Популярный артист",
+      knownFor: dictionary.actorDetails.actorFallback,
       delta: p.delta,
       image: fallbackAvatar,
     })),
@@ -94,4 +100,3 @@ export default async function Home() {
     </PageShell>
   );
 }
-
