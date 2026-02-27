@@ -60,30 +60,29 @@ export function FilterWidgetCheckbox({ checked, onChange, label, className }: Fi
   );
 }
 
-type FilterWidgetTabsOption = {
+type FilterWidgetTagOption = {
   value: string;
   label: string;
 };
 
-type FilterWidgetTabsProps = {
+type FilterWidgetTagCloudProps = {
   value: string;
   onChange: (nextValue: string) => void;
-  options: FilterWidgetTabsOption[];
+  options: FilterWidgetTagOption[];
   className?: string;
 };
 
-export function FilterWidgetTabs({ value, onChange, options, className }: FilterWidgetTabsProps) {
+export function FilterWidgetTagCloud({ value, onChange, options, className }: FilterWidgetTagCloudProps) {
   return (
-    <div className={cn("hide-scrollbar flex touch-pan-x gap-2 overflow-x-auto", className)} role="tablist">
+    <div className={cn("flex flex-wrap gap-2", className)}>
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
           onClick={() => onChange(option.value)}
-          role="tab"
-          aria-selected={value === option.value}
+          aria-pressed={value === option.value}
           className={cn(
-            "shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition",
+            "rounded-full px-4 py-2 text-xs font-semibold transition",
             value === option.value
               ? "bg-sky-400 text-slate-950"
               : "bg-white/5 text-slate-200 hover:bg-white/10"

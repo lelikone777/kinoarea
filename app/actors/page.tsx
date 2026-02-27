@@ -1,11 +1,12 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageShell } from "../components/layout/PageShell";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 import { Button } from "../components/ui/Button";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
+import { FilterWidgetField, FilterWidgetForm } from "../components/ui/filters/FilterWidget";
 import { PaginationToolbar } from "../components/ui/PaginationToolbar";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
@@ -34,14 +35,39 @@ const DEFAULT_SORT_BY: SortValue = "popularity.desc";
 const CATALOG_PAGE_SIZE = 8;
 const TMDB_PAGE_SIZE = 20;
 const TMDB_MAX_PAGE = 500;
+const URL_QUERY_KEY = "query";
+const URL_SORT_KEY = "sortBy";
+const URL_PAGE_KEY = "page";
+
+function parseSortBy(value: string | null): SortValue {
+  return value === "popularity.desc" ? "popularity.desc" : DEFAULT_SORT_BY;
+}
+
+function readActorsFiltersFromUrl() {
+  if (typeof window === "undefined") {
+    return { query: "", sortBy: DEFAULT_SORT_BY as SortValue, page: 1 };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const query = params.get(URL_QUERY_KEY)?.trim() ?? "";
+  const pageRaw = Number.parseInt(params.get(URL_PAGE_KEY) ?? "1", 10);
+
+  return {
+    query,
+    sortBy: parseSortBy(params.get(URL_SORT_KEY)),
+    page: Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1,
+  };
+}
 
 export default function ActorsPage() {
   const router = useRouter();
   const { language } = useSiteLanguage();
   const { dictionary } = useUiDictionary();
+
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortValue>(DEFAULT_SORT_BY);
+  const [isFiltersHydrated, setIsFiltersHydrated] = useState(false);
   const [page, setPage] = useState(1);
   const [visiblePages, setVisiblePages] = useState(1);
   const [pageInput, setPageInput] = useState("1");
@@ -52,6 +78,14 @@ export default function ActorsPage() {
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failedImages, setFailedImages] = useState<Record<number, true>>({});
+
+  const resetCatalogState = useCallback(() => {
+    setItems([]);
+    setTotalPages(1);
+    setTotalResultsRaw(0);
+    setTotalResults(0);
+  }, []);
 
   const sortOptions = useMemo<StyledSelectOption[]>(
     () => [{ value: "popularity.desc", label: dictionary.actors.sort }],
@@ -63,6 +97,61 @@ export default function ActorsPage() {
   }, [page]);
 
   useEffect(() => {
+    const applyFromUrl = () => {
+      const next = readActorsFiltersFromUrl();
+      setQuery(next.query);
+      setSubmittedQuery(next.query);
+      setSortBy(next.sortBy);
+      setPage(next.page);
+      setVisiblePages(1);
+      resetCatalogState();
+      setIsFiltersHydrated(true);
+    };
+
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
+  }, [resetCatalogState]);
+
+  useEffect(() => {
+    if (!isFiltersHydrated || typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (submittedQuery) {
+      params.set(URL_QUERY_KEY, submittedQuery);
+    } else {
+      params.delete(URL_QUERY_KEY);
+    }
+
+    if (sortBy !== DEFAULT_SORT_BY) {
+      params.set(URL_SORT_KEY, sortBy);
+    } else {
+      params.delete(URL_SORT_KEY);
+    }
+
+    if (page > 1) {
+      params.set(URL_PAGE_KEY, String(page));
+    } else {
+      params.delete(URL_PAGE_KEY);
+    }
+
+    const nextSearch = params.toString();
+    const currentSearch = window.location.search.replace(/^\?/, "");
+    if (nextSearch === currentSearch) {
+      return;
+    }
+
+    const nextUrl = nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [submittedQuery, sortBy, page, isFiltersHydrated]);
+
+  useEffect(() => {
+    if (!isFiltersHydrated) {
+      return;
+    }
+
     let isMounted = true;
 
     const loadPeople = async () => {
@@ -145,14 +234,13 @@ export default function ActorsPage() {
     return () => {
       isMounted = false;
     };
-  }, [submittedQuery, sortBy, page, visiblePages, language]);
+  }, [submittedQuery, sortBy, page, visiblePages, language, isFiltersHydrated]);
 
   const hasFilters = Boolean(submittedQuery.trim());
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
   const leftPages = Math.max(0, page - 1);
   const rightPages = Math.max(0, totalPages - shownUntilPage);
   const canShowMore = !isLoading && rightPages > 0;
-  const [failedImages, setFailedImages] = useState<Record<number, true>>({});
   const totalFoundLabel = formatCountWithNoun(totalResultsRaw, language, {
     ru: ["актер", "актера", "актеров"],
     other: ["actor", "actors"],
@@ -175,37 +263,43 @@ export default function ActorsPage() {
         <p className="text-sm text-slate-300">{dictionary.actors.subtitle}</p>
       </div>
 
-      <form
+      <FilterWidgetForm
         onSubmit={(event) => {
           event.preventDefault();
+          resetCatalogState();
           setPage(1);
           setVisiblePages(1);
-          setSubmittedQuery(query);
+          setSubmittedQuery(query.trim());
         }}
-        className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="sm:grid-cols-2 lg:grid-cols-4"
       >
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={dictionary.actors.searchPlaceholder}
-          className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
-        />
+        <FilterWidgetField>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={dictionary.actors.searchPlaceholder}
+            className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
+          />
+        </FilterWidgetField>
 
-        <StyledSelect
-          value={sortBy}
-          onChange={(nextValue) => {
-            setPage(1);
-            setVisiblePages(1);
-            setSortBy(nextValue as SortValue);
-          }}
-          options={sortOptions}
-          placeholder={dictionary.actors.sort}
-        />
+        <FilterWidgetField>
+          <StyledSelect
+            value={sortBy}
+            onChange={(nextValue) => {
+              resetCatalogState();
+              setPage(1);
+              setVisiblePages(1);
+              setSortBy(nextValue as SortValue);
+            }}
+            options={sortOptions}
+            placeholder={dictionary.actors.sort}
+          />
+        </FilterWidgetField>
 
-        <Button variant="cta" className="sm:col-span-2 lg:col-span-1">
-          {dictionary.actors.search}
-        </Button>
-      </form>
+        <FilterWidgetField className="sm:col-span-2 lg:col-span-1">
+          <Button variant="cta">{dictionary.actors.search}</Button>
+        </FilterWidgetField>
+      </FilterWidgetForm>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {isLoading ? (
@@ -254,7 +348,7 @@ export default function ActorsPage() {
             imageAlt={person.name}
             title={person.name}
             meta={`${person.department || dictionary.actors.actorFallback} | ${dictionary.actors.popularity} ${person.popularity.toFixed(1)}`}
-            description={person.knownFor.length ? person.knownFor.join(" • ") : dictionary.actors.careerUpdating}
+            description={person.knownFor.length ? person.knownFor.join(" | ") : dictionary.actors.careerUpdating}
             onActivate={() => router.push(`/actors/${person.id}`)}
             imageProps={{
               unoptimized: true,

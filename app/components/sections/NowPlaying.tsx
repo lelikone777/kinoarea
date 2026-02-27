@@ -2,15 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
 import { useUiDictionary } from "@/app/hooks/useUiDictionary";
-import { FilterWidgetTabs } from "../ui/filters/FilterWidget";
+import { FilterWidgetTagCloud } from "../ui/filters/FilterWidget";
 
 type NowPlayingProps = {
   movies: Movie[];
   filters: string[];
+};
+
+const NOW_FILTER_QUERY_KEY = "nowFilter";
+
+type FilterOption = {
+  value: string;
+  label: string;
 };
 
 export function NowPlaying({ movies, filters }: NowPlayingProps) {
@@ -49,20 +56,56 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
     return genres;
   }, [movies]);
 
-  const filterChips = useMemo(
-    () => [premieresFilter, popularFilter, ...genreFilters],
-    [genreFilters, popularFilter, premieresFilter],
-  );
+  const filterOptions = useMemo<FilterOption[]>(() => {
+    const builtIn: FilterOption[] = [
+      { value: "premieres", label: premieresFilter },
+      { value: "popular", label: popularFilter },
+    ];
+    const genres = genreFilters.map((genre) => ({
+      value: `genre:${normalize(genre)}`,
+      label: genre,
+    }));
+    return [...builtIn, ...genres];
+  }, [genreFilters, popularFilter, premieresFilter]);
 
-  const [activeFilter, setActiveFilter] = useState(filterChips[0] ?? premieresFilter);
-  const effectiveActiveFilter = filterChips.includes(activeFilter) ? activeFilter : (filterChips[0] ?? premieresFilter);
-  const filterTabs = useMemo(
-    () => filterChips.map((filter) => ({ value: filter, label: filter })),
-    [filterChips],
-  );
+  const [activeFilter, setActiveFilter] = useState<string>("premieres");
+  const effectiveActiveFilter = filterOptions.some((option) => option.value === activeFilter)
+    ? activeFilter
+    : (filterOptions[0]?.value ?? "premieres");
+  const filterTabs = filterOptions;
+
+  useEffect(() => {
+    const applyFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlFilter = params.get(NOW_FILTER_QUERY_KEY);
+      setActiveFilter(urlFilter ?? (filterOptions[0]?.value ?? "premieres"));
+    };
+
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
+  }, [filterOptions]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (effectiveActiveFilter === "premieres") {
+      params.delete(NOW_FILTER_QUERY_KEY);
+    } else {
+      params.set(NOW_FILTER_QUERY_KEY, effectiveActiveFilter);
+    }
+
+    const nextSearch = params.toString();
+    const currentSearch = window.location.search.replace(/^\?/, "");
+    if (nextSearch === currentSearch) {
+      return;
+    }
+
+    const nextUrl = nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [effectiveActiveFilter]);
 
   const filteredMovies = useMemo(() => {
-    if (effectiveActiveFilter === premieresFilter) {
+    if (effectiveActiveFilter === "premieres") {
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
       const releaseTimes = movies
         .map((movie) => (movie.releaseDate ? new Date(movie.releaseDate).getTime() : Number.NaN))
@@ -88,7 +131,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       return byBadge.length ? byBadge : movies.slice(0, 6);
     }
 
-    if (effectiveActiveFilter === popularFilter) {
+    if (effectiveActiveFilter === "popular") {
       return [...movies].sort((a, b) => {
         const bScore = (b.popularity ?? 0) * 100 + (b.voteCount ?? 0) + b.rating * 10;
         const aScore = (a.popularity ?? 0) * 100 + (a.voteCount ?? 0) + a.rating * 10;
@@ -96,10 +139,17 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       });
     }
 
+    const activeGenre = effectiveActiveFilter.startsWith("genre:")
+      ? effectiveActiveFilter.slice("genre:".length)
+      : "";
+    if (!activeGenre) {
+      return movies;
+    }
+
     return movies.filter((movie) =>
-      extractGenres(movie).some((genre) => normalize(genre) === normalize(effectiveActiveFilter)),
+      extractGenres(movie).some((genre) => normalize(genre) === activeGenre),
     );
-  }, [effectiveActiveFilter, movies, popularFilter, premieresFilter]);
+  }, [effectiveActiveFilter, movies]);
 
   return (
     <section>
@@ -121,11 +171,11 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       </div>
 
       <div className="mt-4">
-        <FilterWidgetTabs
+        <FilterWidgetTagCloud
           value={effectiveActiveFilter}
           onChange={setActiveFilter}
           options={filterTabs}
-          className="px-2 pb-2"
+          className="px-2"
         />
       </div>
 

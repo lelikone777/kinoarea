@@ -64,6 +64,7 @@ const URL_QUERY_KEY = "query";
 const URL_YEAR_KEY = "year";
 const URL_GENRE_KEY = "genreId";
 const URL_SORT_KEY = "sortBy";
+const URL_PAGE_KEY = "page";
 
 function readMoviesFiltersFromUrl() {
   if (typeof window === "undefined") {
@@ -72,6 +73,7 @@ function readMoviesFiltersFromUrl() {
       year: "",
       genreId: "",
       sortBy: DEFAULT_SORT_BY as SortValue,
+      page: 1,
     };
   }
 
@@ -79,12 +81,14 @@ function readMoviesFiltersFromUrl() {
   const query = params.get(URL_QUERY_KEY)?.trim() ?? "";
   const yearRaw = params.get(URL_YEAR_KEY)?.trim() ?? "";
   const genreRaw = params.get(URL_GENRE_KEY)?.trim() ?? "";
+  const pageRaw = Number.parseInt(params.get(URL_PAGE_KEY) ?? "1", 10);
 
   return {
     query,
     year: /^\d{4}$/.test(yearRaw) ? yearRaw : "",
     genreId: /^\d+$/.test(genreRaw) ? genreRaw : "",
     sortBy: parseSortBy(params.get(URL_SORT_KEY)),
+    page: Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1,
   };
 }
 
@@ -146,7 +150,7 @@ export default function MoviesPage() {
       setYear(next.year);
       setGenreId(next.genreId);
       setSortBy(next.sortBy);
-      setPage(1);
+      setPage(next.page);
       setVisiblePages(1);
       resetCatalogState();
       setIsFiltersHydrated(true);
@@ -187,6 +191,11 @@ export default function MoviesPage() {
     } else {
       params.delete(URL_SORT_KEY);
     }
+    if (page > 1) {
+      params.set(URL_PAGE_KEY, String(page));
+    } else {
+      params.delete(URL_PAGE_KEY);
+    }
 
     const nextSearch = params.toString();
     const currentSearch = window.location.search.replace(/^\?/, "");
@@ -196,7 +205,7 @@ export default function MoviesPage() {
 
     const nextUrl = nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname;
     window.history.replaceState(window.history.state, "", nextUrl);
-  }, [submittedQuery, year, genreId, sortBy, isFiltersHydrated]);
+  }, [submittedQuery, year, genreId, sortBy, page, isFiltersHydrated]);
 
   useEffect(() => {
     if (!isFiltersHydrated) {

@@ -59,13 +59,15 @@ function parseOfficialParam(value: string | null) {
 
 function readFiltersFromUrl() {
   if (typeof window === "undefined") {
-    return { trailerType: "all" as TrailerTypeFilter, officialOnly: false };
+    return { trailerType: "all" as TrailerTypeFilter, officialOnly: false, page: 1 };
   }
 
   const params = new URLSearchParams(window.location.search);
+  const pageRaw = Number.parseInt(params.get("page") ?? "1", 10);
   return {
     trailerType: parseTrailerTypeParam(params.get("type")),
     officialOnly: parseOfficialParam(params.get("official")),
+    page: Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1,
   };
 }
 
@@ -85,6 +87,9 @@ export default function TrailersPage() {
       const next = readFiltersFromUrl();
       setTrailerType((current) => (current === next.trailerType ? current : next.trailerType));
       setOfficialOnly((current) => (current === next.officialOnly ? current : next.officialOnly));
+      setPage((current) => (current === next.page ? current : next.page));
+      setItems([]);
+      setHasMore(false);
       setIsFiltersHydrated(true);
     };
 
@@ -110,6 +115,11 @@ export default function TrailersPage() {
     } else {
       params.delete("official");
     }
+    if (page > 1) {
+      params.set("page", String(page));
+    } else {
+      params.delete("page");
+    }
 
     const nextSearch = params.toString();
     const currentSearch = window.location.search.replace(/^\?/, "");
@@ -119,7 +129,7 @@ export default function TrailersPage() {
 
     const nextUrl = nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname;
     window.history.replaceState(window.history.state, "", nextUrl);
-  }, [isFiltersHydrated, trailerType, officialOnly]);
+  }, [isFiltersHydrated, trailerType, officialOnly, page]);
 
   useEffect(() => {
     setItems([]);
