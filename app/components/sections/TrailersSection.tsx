@@ -61,7 +61,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-extrabold">{dictionary.trailers.title}</h2>
         <Link
-          href="/movies"
+          href="/trailers"
           className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/5"
         >
           {dictionary.trailers.all}
@@ -205,4 +205,3 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
     </section>
   );
 }
-

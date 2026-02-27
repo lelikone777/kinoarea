@@ -141,6 +141,31 @@ type TmdbVideosResponse = {
   results: TmdbVideo[];
 };
 
+export type TmdbTrailerCatalogItem = {
+  movieId: number;
+  movieTitle: string;
+  trailerKey: string;
+  title: string;
+  type: string;
+  official: boolean;
+  publishedAt?: string;
+  image: string;
+};
+
+type TrailerCatalogInput = {
+  page?: number;
+  limit?: number;
+  language?: SiteLanguage;
+  trailerType?: "all" | "trailer" | "teaser" | "clip";
+  officialOnly?: boolean;
+};
+
+type TrailerCatalogResult = {
+  items: TmdbTrailerCatalogItem[];
+  page: number;
+  hasMore: boolean;
+};
+
 function isLoopbackAddress(address: string) {
   return LOOPBACK_ADDRESSES.has(address) || address.startsWith("127.");
 }
@@ -507,7 +532,19 @@ export async function getUpcomingMovies(limit = 8, language: SiteLanguage = "ru-
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Скоро"));
 }
 
-async function getMovieTrailerVideo(movieId: number, language: SiteLanguage = "ru-RU"): Promise<TmdbVideo | undefined> {
+function normalizeVideoType(type: string) {
+  const normalized = type.trim().toLowerCase();
+  if (normalized === "official trailer") {
+    return "trailer";
+  }
+  return normalized;
+}
+
+async function getMovieTrailerVideo(
+  movieId: number,
+  language: SiteLanguage = "ru-RU",
+  options?: { trailerType?: "all" | "trailer" | "teaser" | "clip"; officialOnly?: boolean }
+): Promise<TmdbVideo | undefined> {
   // сначала пробуем выбранный язык, если нет — берём английский
   const normalizedLanguage = normalizeSiteLanguage(language);
   const attempt = async (lang: string) =>
@@ -518,9 +555,24 @@ async function getMovieTrailerVideo(movieId: number, language: SiteLanguage = "r
   const enVideos = en.status === "fulfilled" ? en.value.results : [];
   const videos = [...primaryVideos, ...enVideos];
 
+  const filtered = videos.filter((video) => {
+    if (video.site !== "YouTube") {
+      return false;
+    }
+    if (options?.officialOnly && !video.official) {
+      return false;
+    }
+    if (!options?.trailerType || options.trailerType === "all") {
+      return true;
+    }
+    return normalizeVideoType(video.type) === options.trailerType;
+  });
+
   return (
-    videos.find((v) => v.site === "YouTube" && v.type === "Trailer") ||
-    videos.find((v) => v.site === "YouTube" && v.type === "Teaser")
+    filtered.find((video) => normalizeVideoType(video.type) === "trailer" && video.official) ||
+    filtered.find((video) => normalizeVideoType(video.type) === "trailer") ||
+    filtered.find((video) => normalizeVideoType(video.type) === "teaser") ||
+    filtered[0]
   );
 }
 
@@ -560,6 +612,102 @@ export async function getWeeklyTrailers(limit = 6, language: SiteLanguage = "ru-
   }
 
   return trailers.slice(0, limit);
+}
+
+function mapTrailerCatalogItem(
+  movie: TmdbMovie,
+  video: TmdbVideo,
+  ctx: Awaited<ReturnType<typeof getAssetsContext>>
+): TmdbTrailerCatalogItem {
+  const imagePath = movie.backdrop_path ?? movie.poster_path;
+  return {
+    movieId: movie.id,
+    movieTitle: movie.title,
+    trailerKey: video.key,
+    title: video.name || movie.title,
+    type: video.type || "Trailer",
+    official: Boolean(video.official),
+    publishedAt: video.published_at,
+    image: imagePath ? `${ctx.base}${ctx.backdropSize}${imagePath}` : FALLBACK_BACKDROP,
+  };
+}
+
+function chunkArray<T>(items: T[], chunkSize: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+export async function getTrailersCatalog(input: TrailerCatalogInput = {}): Promise<TrailerCatalogResult> {
+  const normalizedLanguage = normalizeSiteLanguage(input.language);
+  const trailerType = input.trailerType ?? "all";
+  const officialOnly = Boolean(input.officialOnly);
+  const page =
+    Number.isFinite(input.page) && Number(input.page) > 0
+      ? Math.trunc(Number(input.page))
+      : 1;
+  const limit =
+    Number.isFinite(input.limit) && Number(input.limit) > 0
+      ? Math.min(24, Math.trunc(Number(input.limit)))
+      : 12;
+
+  const startIndex = (page - 1) * limit;
+  const targetCount = startIndex + limit + 1;
+  const maxMoviePages = Math.min(30, page * 4 + 6);
+  const concurrency = 5;
+
+  const ctx = await getAssetsContext(normalizedLanguage);
+  const items: TmdbTrailerCatalogItem[] = [];
+
+  for (let moviePage = 1; moviePage <= maxMoviePages && items.length < targetCount; moviePage += 1) {
+    const response = await tmdbFetch<TmdbPagedResponse<TmdbMovie>>("/trending/movie/week", {
+      language: normalizedLanguage,
+      page: moviePage,
+    });
+    const movies = response.results ?? [];
+    if (!movies.length) {
+      break;
+    }
+
+    for (const movieChunk of chunkArray(movies, concurrency)) {
+      if (items.length >= targetCount) {
+        break;
+      }
+
+      const mappedChunk = await Promise.all(
+        movieChunk.map(async (movie) => {
+          const trailerVideoFiltered = await getMovieTrailerVideo(movie.id, normalizedLanguage, {
+            trailerType,
+            officialOnly,
+          });
+          if (!trailerVideoFiltered) {
+            return null;
+          }
+          return mapTrailerCatalogItem(movie, trailerVideoFiltered, ctx);
+        })
+      );
+
+      for (const item of mappedChunk) {
+        if (!item) {
+          continue;
+        }
+        items.push(item);
+      }
+    }
+
+    if (movies.length < 20) {
+      break;
+    }
+  }
+
+  const pageItems = items.slice(startIndex, startIndex + limit);
+  return {
+    items: pageItems,
+    page,
+    hasMore: items.length > startIndex + limit,
+  };
 }
 
 export async function getFeaturedTrailerHero(language: SiteLanguage = "ru-RU"): Promise<TrailerHero | null> {
