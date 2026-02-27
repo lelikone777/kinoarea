@@ -35,10 +35,10 @@ export default async function TicketsSuccessPage({
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-50">
+    <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
       <Header navLinks={navLinks} />
 
-      <main className="relative z-10 mx-auto max-w-3xl space-y-6 px-5 pb-24 pt-10">
+      <main className="relative z-10 mx-auto flex-1 max-w-3xl space-y-6 px-5 pb-24 pt-10">
         <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6">
           <p className="text-xs uppercase tracking-[0.14em] text-emerald-200">Оплата завершена (Demo)</p>
           <h1 className="mt-2 text-3xl font-extrabold">Билеты оформлены</h1>

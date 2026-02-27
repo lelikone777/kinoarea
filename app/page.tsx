@@ -76,12 +76,12 @@ export default async function Home() {
   ];
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-50">
+    <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_40%_20%,rgba(94,234,212,0.12),transparent_25%),radial-gradient(circle_at_70%_0%,rgba(59,130,246,0.16),transparent_25%)]" />
 
       <Header navLinks={navLinks} />
 
-      <main className="relative z-10 mx-auto max-w-6xl px-5 pb-24 pt-10">
+      <main className="relative z-10 mx-auto flex-1 max-w-6xl px-5 pb-24 pt-10">
         <NowPlaying movies={nowPlayingLimited} filters={nowFilters} />
         <TrailersSection hero={featuredHero ?? trailerHero} trailers={normalizedTrailers} />
         <PopularMovies movies={popularFilled} />

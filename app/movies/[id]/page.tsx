@@ -64,10 +64,10 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
   const trailer = movie.trailers[0];
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-50">
+    <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
       <Header navLinks={navLinks} />
 
-      <main className="relative z-10 mx-auto max-w-6xl space-y-8 px-5 pb-24 pt-10">
+      <main className="relative z-10 mx-auto flex-1 max-w-6xl space-y-8 px-5 pb-24 pt-10">
         <Link href="/movies" className="inline-flex text-sm text-sky-300 hover:text-sky-200">
           Back to catalog
         </Link>

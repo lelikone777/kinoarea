@@ -208,10 +208,10 @@ export default function MoviesPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-50">
+    <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
       <Header navLinks={navLinks} />
 
-      <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-5 pb-24 pt-10">
+      <main className="relative z-10 mx-auto flex-1 max-w-6xl space-y-6 px-5 pb-24 pt-10">
         <div className="space-y-2">
           <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог фильмов TMDB</h1>
           <p className="text-sm text-slate-300">Ищите и фильтруйте фильмы с помощью API The Movie Database.</p>
