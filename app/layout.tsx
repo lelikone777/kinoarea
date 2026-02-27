@@ -1,5 +1,8 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { cookies, headers } from "next/headers";
+import { SiteLanguageProvider } from "./components/providers/SiteLanguageProvider";
+import { getLanguageBase, resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,13 +19,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
+
   return (
-    <html lang="ru">
+    <html lang={getLanguageBase(language)}>
       <body
         suppressHydrationWarning
         style={{
@@ -31,7 +40,7 @@ export default function RootLayout({
         }}
         className="bg-slate-950 text-slate-50"
       >
-        {children}
+        <SiteLanguageProvider initialLanguage={language}>{children}</SiteLanguageProvider>
       </body>
     </html>
   );

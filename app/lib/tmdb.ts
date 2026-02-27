@@ -1,6 +1,7 @@
 ﻿import type { Movie, Person, Trailer } from "../data/content";
 import type { TrailerHero } from "../components/sections/TrailersSection";
 import { getLanguageBase, normalizeSiteLanguage, type SiteLanguage } from "./language";
+import { createSwrMemoryCache } from "./swrMemoryCache";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const FALLBACK_POSTER = "/placeholders/poster.svg";
@@ -8,6 +9,13 @@ const FALLBACK_BACKDROP = "/placeholders/backdrop.svg";
 const FALLBACK_AVATAR = "/placeholders/avatar.svg";
 const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "0.0.0.0", "::"]);
 let tmdbReachablePromise: Promise<boolean> | null = null;
+const tmdbCache = createSwrMemoryCache({
+  maxEntries: 700,
+  errorTtlMs: 45_000,
+  staleFactor: 3,
+  maxStaleMs: 7 * 24 * 60 * 60 * 1000,
+  staleOnErrorExtendMs: 30_000,
+});
 
 type TmdbConfigResponse = {
   images: {
@@ -166,6 +174,93 @@ type TrailerCatalogResult = {
   hasMore: boolean;
 };
 
+type TmdbLocalizedLabels = {
+  movieFallback: string;
+  premierePrefix: string;
+  actorFallback: string;
+  popularTag: string;
+  nowPlayingTag: string;
+  soonTag: string;
+  trailerSoonTitle: string;
+  trailerLabel: string;
+  trailerWeekTag: string;
+  recommendationsTag: string;
+  similarTag: string;
+};
+
+const localizedLabelsByBaseLanguage: Record<string, TmdbLocalizedLabels> = {
+  ru: {
+    movieFallback: "Фильм",
+    premierePrefix: "Премьера",
+    actorFallback: "Актер",
+    popularTag: "Популярное",
+    nowPlayingTag: "Сейчас в кино",
+    soonTag: "Скоро",
+    trailerSoonTitle: "Трейлер скоро",
+    trailerLabel: "Трейлер",
+    trailerWeekTag: "Трейлер недели",
+    recommendationsTag: "Рекомендации",
+    similarTag: "Похожее",
+  },
+  en: {
+    movieFallback: "Movie",
+    premierePrefix: "Premiere",
+    actorFallback: "Actor",
+    popularTag: "Popular",
+    nowPlayingTag: "Now in theaters",
+    soonTag: "Coming soon",
+    trailerSoonTitle: "Trailer soon",
+    trailerLabel: "Trailer",
+    trailerWeekTag: "Trailer of the week",
+    recommendationsTag: "Recommendations",
+    similarTag: "Similar",
+  },
+  es: {
+    movieFallback: "Película",
+    premierePrefix: "Estreno",
+    actorFallback: "Actor",
+    popularTag: "Popular",
+    nowPlayingTag: "En cines",
+    soonTag: "Próximamente",
+    trailerSoonTitle: "Tráiler pronto",
+    trailerLabel: "Tráiler",
+    trailerWeekTag: "Tráiler de la semana",
+    recommendationsTag: "Recomendaciones",
+    similarTag: "Similares",
+  },
+  de: {
+    movieFallback: "Film",
+    premierePrefix: "Premiere",
+    actorFallback: "Schauspieler",
+    popularTag: "Beliebt",
+    nowPlayingTag: "Jetzt im Kino",
+    soonTag: "Bald",
+    trailerSoonTitle: "Trailer bald",
+    trailerLabel: "Trailer",
+    trailerWeekTag: "Trailer der Woche",
+    recommendationsTag: "Empfehlungen",
+    similarTag: "Ähnlich",
+  },
+  pt: {
+    movieFallback: "Filme",
+    premierePrefix: "Estreia",
+    actorFallback: "Ator",
+    popularTag: "Popular",
+    nowPlayingTag: "Em cartaz",
+    soonTag: "Em breve",
+    trailerSoonTitle: "Trailer em breve",
+    trailerLabel: "Trailer",
+    trailerWeekTag: "Trailer da semana",
+    recommendationsTag: "Recomendações",
+    similarTag: "Semelhantes",
+  },
+};
+
+function getTmdbLocalizedLabels(language: SiteLanguage): TmdbLocalizedLabels {
+  const languageBase = getLanguageBase(normalizeSiteLanguage(language));
+  return localizedLabelsByBaseLanguage[languageBase] ?? localizedLabelsByBaseLanguage.ru;
+}
+
 function isLoopbackAddress(address: string) {
   return LOOPBACK_ADDRESSES.has(address) || address.startsWith("127.");
 }
@@ -234,14 +329,44 @@ function getTmdbNetworkHint(error: unknown): string | null {
   return null;
 }
 
-async function tmdbFetch<T>(
+class TmdbRequestError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "TmdbRequestError";
+    this.status = status;
+  }
+}
+
+function sortParams(params: Record<string, string | number | undefined>) {
+  return Object.entries(params)
+    .filter(([, value]) => value !== undefined)
+    .sort(([a], [b]) => a.localeCompare(b));
+}
+
+function buildTmdbCacheKey(path: string, params: Record<string, string | number | undefined>) {
+  const serializedParams = sortParams(params)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join("&");
+  return `${path}?${serializedParams}`;
+}
+
+function shouldRememberAsTransientError(error: unknown) {
+  if (!(error instanceof TmdbRequestError)) {
+    return true;
+  }
+  return error.status === 429 || (error.status !== undefined && error.status >= 500);
+}
+
+async function fetchTmdbNetwork<T>(
   path: string,
-  params: Record<string, string | number | undefined> = {},
-  revalidateSeconds = 60 * 10
+  params: Record<string, string | number | undefined>,
+  revalidateSeconds: number,
 ): Promise<T> {
   const reachable = await isTmdbReachable();
   if (!reachable) {
-    throw new Error("TMDB network error: DNS/proxy resolves TMDB API to localhost.");
+    throw new TmdbRequestError("TMDB network error: DNS/proxy resolves TMDB API to localhost.");
   }
 
   const auth = resolveTmdbAuth();
@@ -249,11 +374,10 @@ async function tmdbFetch<T>(
   if (auth.apiKey) {
     url.searchParams.set("api_key", auth.apiKey);
   }
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined) {
-      url.searchParams.set(key, String(value));
-    }
-  });
+
+  for (const [key, value] of sortParams(params)) {
+    url.searchParams.set(key, String(value));
+  }
 
   let res: Response;
   try {
@@ -267,16 +391,30 @@ async function tmdbFetch<T>(
   } catch (error) {
     const hint = getTmdbNetworkHint(error);
     if (hint) {
-      throw new Error(hint, { cause: error as Error });
+      throw new TmdbRequestError(hint, undefined, { cause: error as Error });
     }
-    throw error;
+    throw new TmdbRequestError("TMDB request failed due to network error.", undefined, { cause: error as Error });
   }
 
   if (!res.ok) {
-    throw new Error(`TMDB request failed (${res.status}): ${await res.text()}`);
+    throw new TmdbRequestError(`TMDB request failed (${res.status}): ${await res.text()}`, res.status);
   }
 
   return res.json() as Promise<T>;
+}
+
+async function tmdbFetch<T>(
+  path: string,
+  params: Record<string, string | number | undefined> = {},
+  revalidateSeconds = 60 * 10
+): Promise<T> {
+  const cacheKey = buildTmdbCacheKey(path, params);
+  return tmdbCache.getOrSet<T>({
+    key: cacheKey,
+    ttlMs: revalidateSeconds * 1000,
+    load: () => fetchTmdbNetwork<T>(path, params, revalidateSeconds),
+    shouldCacheError: shouldRememberAsTransientError,
+  });
 }
 
 export async function getTmdbConfiguration() {
@@ -302,6 +440,7 @@ type ImageAssetsContext = {
   posterSize: string;
   backdropSize: string;
   profileSize: string;
+  labels: TmdbLocalizedLabels;
 };
 
 function pickPosterSize(sizes: string[]) {
@@ -341,7 +480,8 @@ async function getAssetsContext(language: SiteLanguage = "ru-RU") {
   const normalizedLanguage = normalizeSiteLanguage(language);
   const [imageAssets, genresMap] = await Promise.all([getImageAssetsContext(), getGenresMap(normalizedLanguage)]);
   const { base, posterSize, backdropSize, profileSize } = imageAssets;
-  return { base, posterSize, backdropSize, profileSize, genresMap };
+  const labels = getTmdbLocalizedLabels(normalizedLanguage);
+  return { base, posterSize, backdropSize, profileSize, genresMap, labels };
 }
 
 function mapMovie(movie: TmdbMovie, ctx: Awaited<ReturnType<typeof getAssetsContext>>, tag?: string): Movie {
@@ -351,7 +491,7 @@ function mapMovie(movie: TmdbMovie, ctx: Awaited<ReturnType<typeof getAssetsCont
   return {
     id: movie.id,
     title: movie.title,
-    genre: genreNames || (year ? `Премьера ${year}` : "Фильм"),
+    genre: genreNames || (year ? `${ctx.labels.premierePrefix} ${year}` : ctx.labels.movieFallback),
     rating: Number(movie.vote_average?.toFixed(1)) || 0,
     tag,
     year,
@@ -444,7 +584,8 @@ export async function getCatalogMovies(input: CatalogMoviesInput = {}): Promise<
 
 function mapCatalogPerson(
   person: TmdbPersonListItem,
-  ctx: Awaited<ReturnType<typeof getImageAssetsContext>>
+  ctx: Awaited<ReturnType<typeof getImageAssetsContext>>,
+  fallbackDepartment: string,
 ): TmdbCatalogPerson {
   const knownFor = (person.known_for ?? [])
     .map((item) => item.title || item.name)
@@ -454,7 +595,7 @@ function mapCatalogPerson(
   return {
     id: person.id,
     name: person.name,
-    department: person.known_for_department || "Актер",
+    department: person.known_for_department || fallbackDepartment,
     popularity: person.popularity ?? 0,
     profile: person.profile_path ? `${ctx.base}${ctx.profileSize}${person.profile_path}` : FALLBACK_AVATAR,
     knownFor,
@@ -469,6 +610,7 @@ export async function getCatalogPeople(input: CatalogPeopleInput = {}): Promise<
       : 1;
 
   const language = normalizeSiteLanguage(input.language);
+  const labels = getTmdbLocalizedLabels(language);
   const params: Record<string, string | number | undefined> = {
     language,
     page,
@@ -485,7 +627,7 @@ export async function getCatalogPeople(input: CatalogPeopleInput = {}): Promise<
   ]);
 
   return {
-    items: response.results.map((person) => mapCatalogPerson(person, ctx)),
+    items: response.results.map((person) => mapCatalogPerson(person, ctx, labels.actorFallback)),
     page: response.page ?? page,
     totalPages: response.total_pages ?? 1,
     totalResults: response.total_results ?? response.results.length,
@@ -507,7 +649,7 @@ export async function getPopularMovies(limit = 6, year?: number, language: SiteL
   }
 
   const { results } = await tmdbFetch<{ results: TmdbMovie[] }>(endpoint, params);
-  return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Популярное"));
+  return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, ctx.labels.popularTag));
 }
 
 export async function getNowPlayingMovies(limit = 12, language: SiteLanguage = "ru-RU"): Promise<Movie[]> {
@@ -518,7 +660,7 @@ export async function getNowPlayingMovies(limit = 12, language: SiteLanguage = "
     region: "RU",
     page: 1,
   });
-  return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Сейчас в кино"));
+  return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, ctx.labels.nowPlayingTag));
 }
 
 export async function getUpcomingMovies(limit = 8, language: SiteLanguage = "ru-RU"): Promise<Movie[]> {
@@ -529,7 +671,7 @@ export async function getUpcomingMovies(limit = 8, language: SiteLanguage = "ru-
     region: "RU",
     page: 1,
   });
-  return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, "Скоро"));
+  return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, ctx.labels.soonTag));
 }
 
 function normalizeVideoType(type: string) {
@@ -605,8 +747,8 @@ export async function getWeeklyTrailers(limit = 6, language: SiteLanguage = "ru-
 
   while (trailers.length < limit) {
     trailers.push({
-      title: "Трейлер скоро",
-      time: "Трейлер",
+      title: ctx.labels.trailerSoonTitle,
+      time: ctx.labels.trailerLabel,
       image: FALLBACK_BACKDROP,
     });
   }
@@ -746,7 +888,7 @@ export async function getFeaturedTrailerHero(language: SiteLanguage = "ru-RU"): 
         ?.slice(0, 2)
         .map((actor) => ({
           name: actor.name,
-          role: actor.character || "Актёр",
+          role: actor.character || ctx.labels.actorFallback,
           avatar: actor.profile_path
             ? `${ctx.base}${ctx.profileSize}${actor.profile_path}`
             : FALLBACK_AVATAR,
@@ -757,7 +899,7 @@ export async function getFeaturedTrailerHero(language: SiteLanguage = "ru-RU"): 
       description: details.overview || movie.overview || "Официальный трейлер",
       image: imagePath ? `${ctx.base}${ctx.backdropSize}${imagePath}` : FALLBACK_BACKDROP,
       duration,
-      tag: "Трейлер недели",
+      tag: ctx.labels.trailerWeekTag,
       movieId: movie.id,
       trailerKey: video.key,
       actors,
@@ -925,8 +1067,8 @@ export async function getMovieFullDetails(movieId: number, language: SiteLanguag
 
   const recommendations = (details.recommendations?.results ?? [])
     .slice(0, 12)
-    .map((movie) => mapMovie(movie, ctx, "Рекомендации"));
-  const similar = (details.similar?.results ?? []).slice(0, 12).map((movie) => mapMovie(movie, ctx, "Похожее"));
+    .map((movie) => mapMovie(movie, ctx, ctx.labels.recommendationsTag));
+  const similar = (details.similar?.results ?? []).slice(0, 12).map((movie) => mapMovie(movie, ctx, ctx.labels.similarTag));
 
   const videoItems = (details.videos?.results ?? [])
     .filter((video) => video.site === "YouTube")
@@ -1214,6 +1356,7 @@ export async function getPersonFullDetails(personId: number, language: SiteLangu
 }
 
 export async function getPopularPeople(limit = 10, page = 1, language: SiteLanguage = "ru-RU"): Promise<Person[]> {
+  const labels = getTmdbLocalizedLabels(language);
   const catalog = await getCatalogPeople({ page, sortBy: "popularity.desc", language });
 
   return catalog.items.slice(0, limit).map((person) => {
@@ -1222,7 +1365,7 @@ export async function getPopularPeople(limit = 10, page = 1, language: SiteLangu
 
     return {
       name: person.name,
-      role: person.department || "Актер",
+      role: person.department || labels.actorFallback,
       knownFor: knownTitle,
       delta,
       image: person.profile,
