@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { navLinks } from "../../data/content";
 import { getMovieFullDetails } from "../../lib/tmdb";
 import { getUiDictionary } from "../../lib/i18n";
-import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
+import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
@@ -36,8 +36,11 @@ function formatMoney(amount?: number, locale = "en-US", currency = "USD") {
 export async function generateMetadata({ params }: MoviePageProps): Promise<Metadata> {
   const { id } = await params;
   const movieId = Number(id);
-  const cookieStore = await cookies();
-  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
 
   if (!Number.isFinite(movieId)) {
     return { title: "Movie not found" };
@@ -57,8 +60,11 @@ export async function generateMetadata({ params }: MoviePageProps): Promise<Meta
 export default async function MovieDetailsPage({ params }: MoviePageProps) {
   const { id } = await params;
   const movieId = Number(id);
-  const cookieStore = await cookies();
-  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
   const dictionary = getUiDictionary(language);
   if (!Number.isFinite(movieId)) notFound();
 
@@ -236,4 +242,3 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
     </div>
   );
 }
-

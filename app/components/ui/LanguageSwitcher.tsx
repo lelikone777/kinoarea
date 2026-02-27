@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/app/hooks/useSiteLanguage";
@@ -7,6 +7,7 @@ import { SUPPORTED_SITE_LANGUAGES, type SiteLanguage } from "@/app/lib/language"
 const LABELS: Record<SiteLanguage, string> = {
   "ru-RU": "RU",
   "en-US": "EN",
+  "pt-BR": "PT",
 };
 
 export function LanguageSwitcher() {
@@ -15,7 +16,7 @@ export function LanguageSwitcher() {
 
   return (
     <label className="hidden sm:block">
-      <span className="sr-only">Язык</span>
+      <span className="sr-only">Language</span>
       <select
         value={language}
         onChange={(event) => {
@@ -34,4 +35,3 @@ export function LanguageSwitcher() {
     </label>
   );
 }
-

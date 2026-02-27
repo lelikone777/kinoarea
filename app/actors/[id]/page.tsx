@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { navLinks } from "../../data/content";
 import { getPersonFullDetails } from "../../lib/tmdb";
 import { getUiDictionary } from "../../lib/i18n";
-import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
+import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
 
 type ActorPageProps = {
   params: Promise<{ id: string }>;
@@ -22,8 +22,11 @@ function formatDate(date?: string, language = "ru-RU") {
 export async function generateMetadata({ params }: ActorPageProps): Promise<Metadata> {
   const { id } = await params;
   const personId = Number(id);
-  const cookieStore = await cookies();
-  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
 
   if (!Number.isFinite(personId) || personId <= 0) {
     return { title: "Actor not found" };
@@ -43,8 +46,11 @@ export async function generateMetadata({ params }: ActorPageProps): Promise<Meta
 export default async function ActorDetailsPage({ params }: ActorPageProps) {
   const { id } = await params;
   const personId = Number(id);
-  const cookieStore = await cookies();
-  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
   const dictionary = getUiDictionary(language);
   if (!Number.isFinite(personId) || personId <= 0) notFound();
 
@@ -206,4 +212,3 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
     </div>
   );
 }
-

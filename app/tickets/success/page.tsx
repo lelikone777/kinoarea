@@ -1,12 +1,12 @@
 import Stripe from "stripe";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { CalendarIcon } from "../../components/icons";
 import { PageShell } from "../../components/layout/PageShell";
 import { LinkButton } from "../../components/ui/Button";
 import { PanelCard } from "../../components/ui/Cards";
 import { resolveReservationContext } from "../../lib/demoStore";
 import { getUiDictionary } from "../../lib/i18n";
-import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
+import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
 
 export const runtime = "nodejs";
 
@@ -23,8 +23,11 @@ export default async function TicketsSuccessPage({
 }: {
   searchParams: Promise<{ reservationId?: string; session_id?: string }>;
 }) {
-  const cookieStore = await cookies();
-  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
   const dictionary = getUiDictionary(language);
   const { reservationId = "", session_id } = await searchParams;
   const ctx = reservationId ? resolveReservationContext(reservationId) : null;
@@ -95,4 +98,3 @@ export default async function TicketsSuccessPage({
     </PageShell>
   );
 }
-

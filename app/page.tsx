@@ -19,8 +19,8 @@ import {
   getPopularPeople,
   isTmdbReachable,
 } from "./lib/tmdb";
-import { cookies } from "next/headers";
-import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
+import { cookies, headers } from "next/headers";
+import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
 import { getUiDictionary } from "./lib/i18n";
 import { PageShell } from "./components/layout/PageShell";
 import { BoxOfficeSection } from "./components/sections/BoxOfficeSection";
@@ -33,8 +33,11 @@ import { TrailersSection } from "./components/sections/TrailersSection";
 import { UpcomingSection } from "./components/sections/UpcomingSection";
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
   const dictionary = getUiDictionary(language);
   const hasTmdbAuth = Boolean(process.env.TMDB_ACCESS_TOKEN || process.env.TMDB_API_KEY);
   const canUseTmdb = hasTmdbAuth ? await isTmdbReachable() : false;
