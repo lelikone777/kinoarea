@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
 import { useUiDictionary } from "@/app/hooks/useUiDictionary";
+import { FilterWidgetTabs } from "../ui/filters/FilterWidget";
 
 type NowPlayingProps = {
   movies: Movie[];
@@ -54,69 +55,11 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
   );
 
   const [activeFilter, setActiveFilter] = useState(filterChips[0] ?? premieresFilter);
-  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
-  const desktopFilterRef = useRef<HTMLDivElement | null>(null);
-  const mobileFiltersRef = useRef<HTMLDivElement | null>(null);
-  const [showMobileFadeLeft, setShowMobileFadeLeft] = useState(false);
-  const [showMobileFadeRight, setShowMobileFadeRight] = useState(false);
   const effectiveActiveFilter = filterChips.includes(activeFilter) ? activeFilter : (filterChips[0] ?? premieresFilter);
-
-  useEffect(() => {
-    if (!isDesktopFilterOpen) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!desktopFilterRef.current) {
-        return;
-      }
-      if (!desktopFilterRef.current.contains(event.target as Node)) {
-        setIsDesktopFilterOpen(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsDesktopFilterOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isDesktopFilterOpen]);
-
-  useEffect(() => {
-    const node = mobileFiltersRef.current;
-    if (!node) {
-      return;
-    }
-
-    const updateFadeState = () => {
-      const maxScroll = node.scrollWidth - node.clientWidth;
-      const hasOverflow = maxScroll > 1;
-      setShowMobileFadeLeft(hasOverflow && node.scrollLeft > 1);
-      setShowMobileFadeRight(hasOverflow && node.scrollLeft < maxScroll - 1);
-    };
-
-    updateFadeState();
-
-    node.addEventListener("scroll", updateFadeState, { passive: true });
-    window.addEventListener("resize", updateFadeState);
-
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateFadeState) : null;
-    observer?.observe(node);
-
-    return () => {
-      node.removeEventListener("scroll", updateFadeState);
-      window.removeEventListener("resize", updateFadeState);
-      observer?.disconnect();
-    };
-  }, [filterChips.length]);
+  const filterTabs = useMemo(
+    () => filterChips.map((filter) => ({ value: filter, label: filter })),
+    [filterChips],
+  );
 
   const filteredMovies = useMemo(() => {
     if (effectiveActiveFilter === premieresFilter) {
@@ -177,74 +120,13 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
         </Link>
       </div>
 
-      <div className="mt-4 hidden lg:flex">
-        <div ref={desktopFilterRef} className="relative w-full max-w-sm">
-          <button
-            type="button"
-            onClick={() => setIsDesktopFilterOpen((prev) => !prev)}
-            aria-expanded={isDesktopFilterOpen}
-            aria-haspopup="listbox"
-            className="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-slate-900/80 px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-sky-300/50 hover:bg-slate-900"
-          >
-            <span>{effectiveActiveFilter}</span>
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className={`h-4 w-4 text-slate-300 transition ${isDesktopFilterOpen ? "rotate-180" : ""}`}
-            >
-              <path fill="currentColor" d="M6.7 8.8a1 1 0 0 1 1.4 0L12 12.7l3.9-3.9a1 1 0 1 1 1.4 1.4l-4.6 4.6a1 1 0 0 1-1.4 0L6.7 10.2a1 1 0 0 1 0-1.4Z" />
-            </svg>
-          </button>
-
-          {isDesktopFilterOpen ? (
-            <div
-              role="listbox"
-              className="hide-scrollbar absolute left-0 right-0 top-[calc(100%+8px)] z-30 max-h-72 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl shadow-sky-900/20 backdrop-blur"
-            >
-              {filterChips.map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => {
-                    setActiveFilter(filter);
-                    setIsDesktopFilterOpen(false);
-                  }}
-                  className={`mb-1 flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition last:mb-0 ${
-                    effectiveActiveFilter === filter
-                      ? "bg-sky-400 text-slate-950"
-                      : "text-slate-200 hover:bg-white/10"
-                  }`}
-                >
-                  <span>{filter}</span>
-                  {effectiveActiveFilter === filter ? (
-                    <span className="text-xs font-bold">{dictionary.nowPlaying.selected}</span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-4 lg:hidden">
-        <div className={`edge-fade-x ${showMobileFadeLeft ? "edge-fade-left" : ""} ${showMobileFadeRight ? "edge-fade-right" : ""}`}>
-          <div ref={mobileFiltersRef} className="hide-scrollbar flex touch-pan-x gap-2 overflow-x-auto px-2 pb-2">
-            {filterChips.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => setActiveFilter(filter)}
-                className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
-                  effectiveActiveFilter === filter
-                    ? "bg-sky-400 text-slate-950"
-                    : "bg-white/5 text-slate-200 hover:bg-white/10"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="mt-4">
+        <FilterWidgetTabs
+          value={effectiveActiveFilter}
+          onChange={setActiveFilter}
+          options={filterTabs}
+          className="px-2 pb-2"
+        />
       </div>
 
       {filteredMovies.length === 0 ? (

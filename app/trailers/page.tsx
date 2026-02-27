@@ -5,6 +5,11 @@ import { PageShell } from "../components/layout/PageShell";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
 import { Button } from "../components/ui/Button";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
+import {
+  FilterWidget,
+  FilterWidgetCheckbox,
+  FilterWidgetField,
+} from "../components/ui/filters/FilterWidget";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 import { useUiDictionary } from "../hooks/useUiDictionary";
 
@@ -234,33 +239,33 @@ export default function TrailersPage() {
         <p className="text-sm text-slate-300">{subtitle}</p>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StyledSelect
-          value={trailerType}
-          onChange={(nextValue) => {
-            setItems([]);
-            setPage(1);
-            setHasMore(false);
-            setTrailerType(nextValue as TrailerTypeFilter);
-          }}
-          options={typeFilterOptions}
-          placeholder={typeFilterOptions[0]?.label ?? "All types"}
-        />
-        <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white">
-          <input
-            type="checkbox"
-            checked={officialOnly}
-            onChange={(event) => {
+      <FilterWidget className="sm:grid-cols-2 lg:grid-cols-4">
+        <FilterWidgetField>
+          <StyledSelect
+            value={trailerType}
+            onChange={(nextValue) => {
               setItems([]);
               setPage(1);
               setHasMore(false);
-              setOfficialOnly(event.target.checked);
+              setTrailerType(nextValue as TrailerTypeFilter);
             }}
-            className="h-4 w-4 accent-sky-400"
+            options={typeFilterOptions}
+            placeholder={typeFilterOptions[0]?.label ?? "All types"}
           />
-          {officialOnlyLabel}
-        </label>
-      </div>
+        </FilterWidgetField>
+        <FilterWidgetField>
+          <FilterWidgetCheckbox
+            checked={officialOnly}
+            onChange={(nextValue) => {
+              setItems([]);
+              setPage(1);
+              setHasMore(false);
+              setOfficialOnly(nextValue);
+            }}
+            label={officialOnlyLabel}
+          />
+        </FilterWidgetField>
+      </FilterWidget>
 
       {error ? <ErrorCard>{error}</ErrorCard> : null}
 

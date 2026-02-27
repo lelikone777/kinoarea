@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageShell } from "../components/layout/PageShell";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 import { Button } from "../components/ui/Button";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
+import { FilterWidgetField, FilterWidgetForm } from "../components/ui/filters/FilterWidget";
 import { PaginationToolbar } from "../components/ui/PaginationToolbar";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
@@ -59,6 +60,33 @@ function parseSortBy(value: string | null): SortValue {
 const CATALOG_PAGE_SIZE = 8;
 const TMDB_PAGE_SIZE = 20;
 const TMDB_MAX_PAGE = 500;
+const URL_QUERY_KEY = "query";
+const URL_YEAR_KEY = "year";
+const URL_GENRE_KEY = "genreId";
+const URL_SORT_KEY = "sortBy";
+
+function readMoviesFiltersFromUrl() {
+  if (typeof window === "undefined") {
+    return {
+      query: "",
+      year: "",
+      genreId: "",
+      sortBy: DEFAULT_SORT_BY as SortValue,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const query = params.get(URL_QUERY_KEY)?.trim() ?? "";
+  const yearRaw = params.get(URL_YEAR_KEY)?.trim() ?? "";
+  const genreRaw = params.get(URL_GENRE_KEY)?.trim() ?? "";
+
+  return {
+    query,
+    year: /^\d{4}$/.test(yearRaw) ? yearRaw : "",
+    genreId: /^\d+$/.test(genreRaw) ? genreRaw : "",
+    sortBy: parseSortBy(params.get(URL_SORT_KEY)),
+  };
+}
 
 export default function MoviesPage() {
   const router = useRouter();
@@ -70,7 +98,7 @@ export default function MoviesPage() {
   const [year, setYear] = useState<string>("");
   const [genreId, setGenreId] = useState<string>("");
   const [sortBy, setSortBy] = useState<SortValue>(DEFAULT_SORT_BY);
-  const [isSortInitialized, setIsSortInitialized] = useState(false);
+  const [isFiltersHydrated, setIsFiltersHydrated] = useState(false);
   const [page, setPage] = useState(1);
   const [visiblePages, setVisiblePages] = useState(1);
   const [pageInput, setPageInput] = useState("1");
@@ -82,6 +110,12 @@ export default function MoviesPage() {
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resetCatalogState = useCallback(() => {
+    setItems([]);
+    setTotalPages(1);
+    setTotalResultsRaw(0);
+    setTotalResults(0);
+  }, []);
 
   const years = useMemo(
     () => Array.from({ length: 80 }, (_, index) => String(currentYear - index)),
@@ -105,13 +139,67 @@ export default function MoviesPage() {
   }, [page]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setSortBy(parseSortBy(params.get("sortBy")));
-    setIsSortInitialized(true);
-  }, []);
+    const applyFromUrl = () => {
+      const next = readMoviesFiltersFromUrl();
+      setQuery(next.query);
+      setSubmittedQuery(next.query);
+      setYear(next.year);
+      setGenreId(next.genreId);
+      setSortBy(next.sortBy);
+      setPage(1);
+      setVisiblePages(1);
+      resetCatalogState();
+      setIsFiltersHydrated(true);
+    };
+
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
+  }, [resetCatalogState]);
 
   useEffect(() => {
-    if (!isSortInitialized) {
+    if (!isFiltersHydrated) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (submittedQuery) {
+      params.set(URL_QUERY_KEY, submittedQuery);
+    } else {
+      params.delete(URL_QUERY_KEY);
+    }
+    if (year) {
+      params.set(URL_YEAR_KEY, year);
+    } else {
+      params.delete(URL_YEAR_KEY);
+    }
+    if (genreId) {
+      params.set(URL_GENRE_KEY, genreId);
+    } else {
+      params.delete(URL_GENRE_KEY);
+    }
+    if (sortBy !== DEFAULT_SORT_BY) {
+      params.set(URL_SORT_KEY, sortBy);
+    } else {
+      params.delete(URL_SORT_KEY);
+    }
+
+    const nextSearch = params.toString();
+    const currentSearch = window.location.search.replace(/^\?/, "");
+    if (nextSearch === currentSearch) {
+      return;
+    }
+
+    const nextUrl = nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [submittedQuery, year, genreId, sortBy, isFiltersHydrated]);
+
+  useEffect(() => {
+    if (!isFiltersHydrated) {
       return;
     }
 
@@ -200,7 +288,7 @@ export default function MoviesPage() {
     return () => {
       isMounted = false;
     };
-  }, [submittedQuery, year, genreId, sortBy, page, visiblePages, isSortInitialized, language]);
+  }, [submittedQuery, year, genreId, sortBy, page, visiblePages, isFiltersHydrated, language]);
 
   const hasFilters = Boolean(submittedQuery.trim() || year || genreId);
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
@@ -229,57 +317,71 @@ export default function MoviesPage() {
           <p className="text-sm text-slate-300">{dictionary.movies.subtitle}</p>
         </div>
 
-        <form
+        <FilterWidgetForm
           onSubmit={(event) => {
             event.preventDefault();
+            resetCatalogState();
             setPage(1);
             setVisiblePages(1);
-            setSubmittedQuery(query);
+            setSubmittedQuery(query.trim());
           }}
-          className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-5"
+          className="sm:grid-cols-2 lg:grid-cols-5"
         >
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={dictionary.movies.searchPlaceholder}
-            className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
-          />
+          <FilterWidgetField>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={dictionary.movies.searchPlaceholder}
+              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
+            />
+          </FilterWidgetField>
 
-          <StyledSelect
-            value={year}
-            onChange={(nextValue) => {
-              setPage(1);
-              setVisiblePages(1);
-              setYear(nextValue);
-            }}
-            options={yearOptions}
-            placeholder={dictionary.movies.anyYear}
-          />
+          <FilterWidgetField>
+            <StyledSelect
+              value={year}
+              onChange={(nextValue) => {
+                resetCatalogState();
+                setPage(1);
+                setVisiblePages(1);
+                setYear(nextValue);
+              }}
+              options={yearOptions}
+              placeholder={dictionary.movies.anyYear}
+            />
+          </FilterWidgetField>
 
-          <StyledSelect
-            value={genreId}
-            onChange={(nextValue) => {
-              setPage(1);
-              setVisiblePages(1);
-              setGenreId(nextValue);
-            }}
-            options={genreOptions}
-            placeholder={dictionary.movies.allGenres}
-          />
+          <FilterWidgetField>
+            <StyledSelect
+              value={genreId}
+              onChange={(nextValue) => {
+                resetCatalogState();
+                setPage(1);
+                setVisiblePages(1);
+                setGenreId(nextValue);
+              }}
+              options={genreOptions}
+              placeholder={dictionary.movies.allGenres}
+            />
+          </FilterWidgetField>
 
-          <StyledSelect
-            value={sortBy}
-            onChange={(nextValue) => {
-              setPage(1);
-              setVisiblePages(1);
-              setSortBy(nextValue as SortValue);
-            }}
-            options={sortOptions}
-            placeholder={dictionary.movies.sort}
-          />
+          <FilterWidgetField>
+            <StyledSelect
+              value={sortBy}
+              onChange={(nextValue) => {
+                resetCatalogState();
+                setPage(1);
+                setVisiblePages(1);
+                setSortBy(nextValue as SortValue);
+              }}
+              options={sortOptions}
+              placeholder={dictionary.movies.sort}
+            />
+          </FilterWidgetField>
 
-          <Button variant="cta">{dictionary.movies.search}</Button>
-        </form>
+          <FilterWidgetField>
+            <Button variant="cta">{dictionary.movies.search}</Button>
+          </FilterWidgetField>
+        </FilterWidgetForm>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {isLoading ? (
