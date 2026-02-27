@@ -10,6 +10,7 @@ import { PaginationToolbar } from "../components/ui/PaginationToolbar";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useUiDictionary } from "../hooks/useUiDictionary";
+import { formatCountWithNoun } from "../lib/pluralize";
 
 type CatalogPerson = {
   id: number;
@@ -152,6 +153,14 @@ export default function ActorsPage() {
   const rightPages = Math.max(0, totalPages - shownUntilPage);
   const canShowMore = !isLoading && rightPages > 0;
   const [failedImages, setFailedImages] = useState<Record<number, true>>({});
+  const totalFoundLabel = formatCountWithNoun(totalResultsRaw, language, {
+    ru: ["актер", "актера", "актеров"],
+    other: ["actor", "actors"],
+  });
+  const totalAvailableLabel = formatCountWithNoun(totalResults, language, {
+    ru: ["актер", "актера", "актеров"],
+    other: ["actor", "actors"],
+  });
 
   const goToPage = (targetPage: number) => {
     const clamped = Math.max(1, Math.min(totalPages, targetPage));
@@ -203,8 +212,8 @@ export default function ActorsPage() {
           <p>{dictionary.common.loading}</p>
         ) : (
           <div className="text-sm">
-            <p>{dictionary.actors.totalFound}: {totalResultsRaw.toLocaleString("ru-RU")}</p>
-            <p className="text-slate-400">{dictionary.actors.totalAvailable}: {totalResults.toLocaleString("ru-RU")}</p>
+            <p>{dictionary.actors.totalFound}: {totalFoundLabel}</p>
+            <p className="text-slate-400">{dictionary.actors.totalAvailable}: {totalAvailableLabel}</p>
           </div>
         )}
 

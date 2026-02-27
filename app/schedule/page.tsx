@@ -7,6 +7,7 @@ import { PageShell } from "../components/layout/PageShell";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
 import { ErrorCard, InfoCard } from "../components/ui/Cards";
 import { useUiDictionary } from "../hooks/useUiDictionary";
+import { formatCountWithNoun } from "../lib/pluralize";
 
 type City = { id: string; name: string };
 type Cinema = { id: string; name: string; chain: string; address: string };
@@ -132,6 +133,10 @@ export default function SchedulePage() {
       .map((m) => ({ movie: m, screenings: screeningsByMovie.get(m.id) ?? [] }))
       .filter((entry) => entry.screenings.length > 0);
   }, [data?.movies, screeningsByMovie]);
+  const moviesWithScreeningsLabel = formatCountWithNoun(moviesWithScreenings.length, language, {
+    ru: ["фильм", "фильма", "фильмов"],
+    other: ["movie", "movies"],
+  });
 
   return (
     <PageShell>
@@ -146,7 +151,7 @@ export default function SchedulePage() {
         <StyledSelect value={day} onChange={(nextValue) => setDay(nextValue)} options={dayOptions} placeholder={dictionary.schedule.day} />
 
         <div className="hidden items-center justify-end text-sm text-slate-300 lg:flex">
-          {isLoading ? dictionary.common.loading : `${moviesWithScreenings.length} ${dictionary.schedule.moviesCountSuffix}`}
+          {isLoading ? dictionary.common.loading : moviesWithScreeningsLabel}
         </div>
       </div>
 
@@ -218,4 +223,3 @@ export default function SchedulePage() {
     </PageShell>
   );
 }
-

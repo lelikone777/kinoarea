@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import { StarIcon } from "../icons";
 import type { Movie } from "../../data/content";
@@ -12,7 +12,7 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
     <section className="mt-14 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-extrabold">Скоро на экранах</h2>
-        <span className="text-xs text-slate-400">Топ ожиданий - фильмы и сериалы</span>
+        <span className="text-xs text-slate-400">Топ ожиданий: фильмы и сериалы</span>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {movies.map((movie, index) => {
@@ -44,19 +44,13 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
                       <StarIcon className="h-4 w-4 text-amber-300" />
                       {movie.rating.toFixed(1)}
                     </div>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
-                      Подробнее
-                    </span>
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Подробнее</span>
                   </div>
                   <p className="mt-3 text-lg font-bold leading-6">{movie.title}</p>
                   <p className="text-sm text-slate-300">{movie.genre}</p>
                 </div>
                 {movie.id ? (
-                  <Link
-                    href={`/movies/${movie.id}`}
-                    className="absolute inset-0"
-                    aria-label={`Открыть фильм ${movie.title}`}
-                  />
+                  <Link href={`/movies/${movie.id}`} className="absolute inset-0" aria-label={`Открыть фильм ${movie.title}`} />
                 ) : null}
               </div>
             </div>

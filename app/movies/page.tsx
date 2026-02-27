@@ -10,6 +10,7 @@ import { PaginationToolbar } from "../components/ui/PaginationToolbar";
 import { CatalogGridCard } from "../components/ui/CatalogGridCard";
 import { useSiteLanguage } from "../hooks/useSiteLanguage";
 import { useUiDictionary } from "../hooks/useUiDictionary";
+import { formatCountWithNoun } from "../lib/pluralize";
 
 type CatalogMovie = {
   id: number;
@@ -206,6 +207,14 @@ export default function MoviesPage() {
   const leftPages = Math.max(0, page - 1);
   const rightPages = Math.max(0, totalPages - shownUntilPage);
   const canShowMore = !isLoading && rightPages > 0;
+  const totalFoundLabel = formatCountWithNoun(totalResultsRaw, language, {
+    ru: ["фильм", "фильма", "фильмов"],
+    other: ["movie", "movies"],
+  });
+  const totalAvailableLabel = formatCountWithNoun(totalResults, language, {
+    ru: ["фильм", "фильма", "фильмов"],
+    other: ["movie", "movies"],
+  });
 
   const goToPage = (targetPage: number) => {
     const clamped = Math.max(1, Math.min(totalPages, targetPage));
@@ -277,8 +286,8 @@ export default function MoviesPage() {
             <p>Загрузка...</p>
           ) : (
             <div className="text-sm">
-              <p>{dictionary.movies.totalFound}: {totalResultsRaw.toLocaleString("ru-RU")}</p>
-              <p className="text-slate-400">{dictionary.movies.totalAvailable}: {totalResults.toLocaleString("ru-RU")}</p>
+              <p>{dictionary.movies.totalFound}: {totalFoundLabel}</p>
+              <p className="text-slate-400">{dictionary.movies.totalAvailable}: {totalAvailableLabel}</p>
             </div>
           )}
 

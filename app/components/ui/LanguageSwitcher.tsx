@@ -8,6 +8,8 @@ const LABELS: Record<SiteLanguage, string> = {
   "ru-RU": "RU",
   "en-US": "EN",
   "pt-BR": "PT",
+  "es-ES": "ES",
+  "de-DE": "DE",
 };
 
 export function LanguageSwitcher() {

@@ -1,5 +1,5 @@
 export const SITE_LANGUAGE_COOKIE = "site_lang";
-export const SUPPORTED_SITE_LANGUAGES = ["ru-RU", "en-US", "pt-BR"] as const;
+export const SUPPORTED_SITE_LANGUAGES = ["ru-RU", "en-US", "pt-BR", "es-ES", "de-DE"] as const;
 const DEFAULT_SITE_LANGUAGE = "ru-RU" as const;
 
 export type SiteLanguage = (typeof SUPPORTED_SITE_LANGUAGES)[number];
