@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 
 export function NewsletterSection() {
   return (
@@ -6,12 +6,9 @@ export function NewsletterSection() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.2em] text-sky-200">Подборка недели</p>
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-            Подписка на e-mail с лучшими трейлерами и премьерами
-          </h3>
+          <h3 className="text-3xl font-extrabold text-white">Подписка на e-mail с лучшими трейлерами и премьерами</h3>
           <p className="max-w-xl text-sm text-sky-100">
-            Получайте подборки фильмов, расписание премьер и материалы редакции. Только
-            полезные письма без спама.
+            Получайте подборки фильмов, расписание премьер и материалы редакции. Только полезные письма без спама.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
@@ -24,8 +21,7 @@ export function NewsletterSection() {
             </button>
           </div>
           <p className="text-xs text-sky-100/70">
-            Нажимая кнопку, вы соглашаетесь на обработку данных и получение писем о
-            новинках.
+            Нажимая кнопку, вы соглашаетесь на обработку данных и получение писем о новинках.
           </p>
         </div>
         <div className="relative hidden items-center justify-center lg:flex">

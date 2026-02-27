@@ -1,10 +1,16 @@
-export type Movie = {
+﻿export type Movie = {
+  id?: number;
   title: string;
   genre: string;
   rating: number;
   year?: number;
   tag?: string;
   badge?: string;
+  year?: number;
+  releaseDate?: string;
+  popularity?: number;
+  voteCount?: number;
+  genreIds?: number[];
   image: string;
 };
 
@@ -13,6 +19,9 @@ export type Trailer = {
   time: string;
   image: string;
   note?: string;
+  movieId?: number;
+  trailerKey?: string;
+  trailerUrl?: string;
 };
 
 export type Person = {
@@ -46,18 +55,15 @@ export type BoxOffice = {
 
 export const navLinks = [
   { label: "Главная", href: "/" },
-  { label: "Каталог IMDb", href: "/movies" },
-  { label: "Премьеры", href: "#premieres" },
-  { label: "Люди", href: "#people" },
+  { label: "Каталог", href: "/movies" },
+  { label: "Актеры", href: "/actors" },
+  { label: "Трейлеры", href: "/trailers" },
   { label: "Новости", href: "#news" },
 ];
 
 export const nowFilters = [
-  "Все форматы",
-  "Ближайшие",
-  "Новинки недели",
-  "IMAX",
-  "4DX",
+  "Премьеры",
+  "Популярные",
 ];
 
 export const nowPlaying: Movie[] = [
@@ -128,18 +134,17 @@ export const trailerHero = {
   image: "https://image.tmdb.org/t/p/w1280/bOFaAXmWWXC3Rbv4u4uM9ZSzRXP.jpg",
   duration: "2:32",
   tag: "Трейлер недели",
+  trailerUrl: "https://www.youtube.com/results?search_query=Форсаж+9+трейлер",
   actors: [
     {
       name: "Вин Дизель",
       role: "Доминик Торетто",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80",
+      avatar: "/placeholders/avatar.svg",
     },
     {
       name: "Мишель Родригес",
       role: "Летти Ортис",
-      avatar:
-        "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80",
+      avatar: "/placeholders/avatar.svg",
     },
   ],
 };
@@ -150,22 +155,26 @@ export const trailers: Trailer[] = [
     time: "02:10",
     note: "Премьера",
     image: "https://image.tmdb.org/t/p/w780/k68nPLbIST6NP96JmTxmZijEvCA.jpg",
+    trailerUrl: "https://www.youtube.com/results?search_query=Тихое+место+2+трейлер",
   },
   {
     title: "Дюна",
     time: "01:34",
     image: "https://image.tmdb.org/t/p/w780/aKx1ARwG55zZ0GpRvU2WrGrCG9o.jpg",
+    trailerUrl: "https://www.youtube.com/results?search_query=Дюна+трейлер",
   },
   {
     title: "Отряд самоубийц",
     time: "02:08",
     image: "https://image.tmdb.org/t/p/w780/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg",
+    trailerUrl: "https://www.youtube.com/results?search_query=Отряд+самоубийц+трейлер",
   },
   {
     title: "Вечные",
     time: "03:11",
     note: "IMAX",
     image: "https://image.tmdb.org/t/p/w780/d5NXSklXo0qyIYkgV94XAgMIckC.jpg",
+    trailerUrl: "https://www.youtube.com/results?search_query=Вечные+трейлер",
   },
 ];
 
@@ -227,16 +236,14 @@ export const peopleSpotlight: Person[] = [
     role: "Режиссёр",
     knownFor: "«Полярный свет» — хитовый сериал",
     delta: "+112 350",
-    image:
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80",
+    image: "/placeholders/avatar.svg",
   },
   {
     name: "Максим Иванов",
     role: "Актёр",
     knownFor: "«Форсаж 9» — роль второго плана",
     delta: "+75 930",
-    image:
-      "https://images.unsplash.com/photo-1500336624523-d727130c3328?auto=format&fit=facearea&facepad=3&w=320&h=320&q=80",
+    image: "/placeholders/avatar.svg",
   },
 ];
 
@@ -257,24 +264,21 @@ export const newsArticles: News[] = [
     date: "07 января 2025",
     excerpt:
       "Группа постановщиков поделилась деталями финальной сцены — использовали реальные автомобили и минимум графики.",
-    image:
-      "https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1200&q=80",
+    image: "/placeholders/backdrop.svg",
   },
   {
     title: "Новый фестиваль авторского кино пройдёт летом в Сочи",
     date: "05 января 2025",
     excerpt:
       "Организаторы обещают открытый питчинг, внеконкурсную программу и показы под открытым небом.",
-    image:
-      "https://images.unsplash.com/photo-1505682634904-d7c075c738d4?auto=format&fit=crop&w=600&q=80",
+    image: "/placeholders/backdrop.svg",
   },
   {
     title: "Премия кинокритиков: кто лидирует в шорт-листе 2025",
     date: "01 января 2025",
     excerpt:
       "В списке претендентов — независимые драмы, научная фантастика и несколько отечественных премьер.",
-    image:
-      "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?auto=format&fit=crop&w=600&q=80",
+    image: "/placeholders/backdrop.svg",
   },
 ];
 

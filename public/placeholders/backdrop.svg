@@ -1,0 +1,23 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1180" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="r1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 180) rotate(21) scale(340 190)">
+      <stop stop-color="#67E8F9" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#67E8F9" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="r2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 120) rotate(160) scale(360 180)">
+      <stop stop-color="#60A5FA" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="720" rx="28" fill="url(#bg)"/>
+  <rect width="1280" height="720" rx="28" fill="url(#r1)"/>
+  <rect width="1280" height="720" rx="28" fill="url(#r2)"/>
+  <rect x="356" y="250" width="568" height="220" rx="26" fill="#0F172A" fill-opacity="0.7"/>
+  <path d="M630 305L740 360L630 415V305Z" fill="#38BDF8"/>
+  <text x="640" y="520" text-anchor="middle" fill="#BFDBFE" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">NO BACKDROP</text>
+  <text x="640" y="555" text-anchor="middle" fill="#94A3B8" font-size="18" font-family="Segoe UI, Arial, sans-serif">Kinoarea Fallback</text>
+</svg>

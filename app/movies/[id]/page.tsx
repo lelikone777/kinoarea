@@ -4,73 +4,246 @@ import { getImdbMovieDetails } from "../../lib/imdb";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { navLinks } from "../../data/content";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { cookies, headers } from "next/headers";
+import { Header } from "../../components/layout/Header";
+import { Footer } from "../../components/layout/Footer";
+import { navLinks } from "../../data/content";
+import { getMovieFullDetails } from "../../lib/tmdb";
+import { getUiDictionary } from "../../lib/i18n";
+import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function MoviePage({ params }: MoviePageProps) {
-  const { id } = await params;
-  let movie = null as Awaited<ReturnType<typeof getImdbMovieDetails>> | null;
-  let errorMessage: string | null = null;
+function formatRuntime(minutes?: number) {
+  if (!minutes || minutes <= 0) return "N/A";
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
 
-  try {
-    movie = await getImdbMovieDetails(id);
-  } catch (error) {
-    errorMessage = error instanceof Error ? error.message : "Не удалось загрузить фильм";
+function formatDate(date?: string, language = "en-US") {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleDateString(language);
+}
+
+function formatMoney(amount?: number, locale = "en-US", currency = "USD") {
+  if (!amount) return "N/A";
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export async function generateMetadata({ params }: MoviePageProps): Promise<Metadata> {
+  const { id } = await params;
+  const movieId = Number(id);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
+
+  if (!Number.isFinite(movieId)) {
+    return { title: "Movie not found" };
   }
 
-  return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-50">
-      <Header navLinks={navLinks} />
-      <main className="relative z-10 mx-auto max-w-6xl px-3 sm:px-5 pb-20 sm:pb-24 pt-8 sm:pt-10">
-      <Link href="/movies" className="mb-6 inline-flex text-sm text-sky-300 hover:text-sky-200">
-        ← Назад к поиску
-      </Link>
+  try {
+    const movie = await getMovieFullDetails(movieId, language);
+    return {
+      title: `${movie.title}${movie.year ? ` (${movie.year})` : ""} | TMDB`,
+      description: movie.overview || `Movie details for ${movie.title}`,
+    };
+  } catch {
+    return { title: "Movie details" };
+  }
+}
 
-      {errorMessage || !movie ? (
-        <div className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-4 text-rose-100">
-          {errorMessage ?? "Не удалось загрузить фильм"}
-        </div>
-      ) : (
-        <div className="grid gap-5 sm:gap-6 rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-900/60 p-4 sm:p-5 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
+export default async function MovieDetailsPage({ params }: MoviePageProps) {
+  const { id } = await params;
+  const movieId = Number(id);
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  const language = resolveSiteLanguage({
+    cookieLanguage: cookieStore.get(SITE_LANGUAGE_COOKIE)?.value,
+    acceptLanguage: headerStore.get("accept-language"),
+  });
+  const dictionary = getUiDictionary(language);
+  if (!Number.isFinite(movieId)) notFound();
+
+  let movie;
+  try {
+    movie = await getMovieFullDetails(movieId, language);
+  } catch {
+    notFound();
+  }
+
+  const trailer = movie.trailers[0];
+  const currency = language === "ru-RU" ? "RUB" : "USD";
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
+      <Header navLinks={navLinks} />
+
+      <main className="relative z-10 mx-auto flex-1 max-w-6xl space-y-8 px-5 pb-24 pt-10">
+        <Link href="/movies" className="inline-flex text-sm text-sky-300 hover:text-sky-200">
+          {dictionary.movieDetails.back}
+        </Link>
+
+        <section className="grid gap-6 rounded-3xl border border-white/10 bg-slate-900/60 p-5 md:grid-cols-[320px_1fr]">
           <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
             <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
           </div>
 
           <div className="space-y-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold">{movie.title}</h1>
-              <p className="text-slate-300">{movie.year} • {movie.runtime} • {movie.genre}</p>
+              <h1 className="text-3xl font-extrabold">{movie.title}</h1>
+              <p className="text-slate-300">
+                {movie.year ?? dictionary.common.unknown} | {formatRuntime(movie.runtime)} | TMDB {movie.voteAverage.toFixed(1)}
+              </p>
             </div>
 
-            <p className="text-slate-200">{movie.plot}</p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {movie.genres.map((genre) => (
+                <span key={genre.id} className="rounded-full border border-white/15 px-3 py-1 text-slate-200">
+                  {genre.name}
+                </span>
+              ))}
+            </div>
+
+            <p className="text-slate-200">{movie.overview || dictionary.movieDetails.noOverview}</p>
 
             <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-              <p><span className="text-white">IMDb:</span> {movie.imdbRating} ({movie.imdbVotes})</p>
-              <p><span className="text-white">Режиссёр:</span> {movie.director}</p>
-              <p><span className="text-white">Сценарий:</span> {movie.writer}</p>
-              <p><span className="text-white">Актёры:</span> {movie.actors}</p>
-              <p><span className="text-white">Премьера:</span> {movie.released}</p>
-              <p><span className="text-white">Сборы:</span> {movie.boxOffice}</p>
+              <p><span className="text-white">{dictionary.movieDetails.releaseDate}:</span> {formatDate(movie.releaseDate, language)}</p>
+              <p><span className="text-white">{dictionary.movieDetails.status}:</span> {movie.status || dictionary.common.unknown}</p>
+              <p><span className="text-white">{dictionary.movieDetails.budget}:</span> {formatMoney(movie.budget, language, currency)}</p>
+              <p><span className="text-white">{dictionary.movieDetails.revenue}:</span> {formatMoney(movie.revenue, language, currency)}</p>
+              <p><span className="text-white">{dictionary.movieDetails.language}:</span> {movie.originalLanguage || dictionary.common.unknown}</p>
+              <p><span className="text-white">{dictionary.movieDetails.voteCount}:</span> {movie.voteCount ?? 0}</p>
             </div>
 
-            {movie.ratings.length ? (
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold">Рейтинги</h2>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {movie.ratings.map((rating) => (
-                    <div key={rating.source} className="rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm">
-                      <p className="text-slate-400">{rating.source}</p>
-                      <p className="font-semibold text-white">{rating.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {movie.homepage ? (
+              <a
+                href={movie.homepage}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex rounded-xl border border-white/20 px-3 py-2 text-sm hover:border-white/40"
+              >
+                {dictionary.movieDetails.officialSite}
+              </a>
             ) : null}
           </div>
-        </div>
-      )}      </main>
+        </section>
+
+        {trailer ? (
+          <section className="space-y-3 rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+            <h2 className="text-xl font-bold">{dictionary.movieDetails.trailer}</h2>
+            <div className="aspect-video overflow-hidden rounded-2xl border border-white/10">
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${trailer.key}`}
+                title={trailer.name}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        ) : null}
+
+        <section className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.cast}</h2>
+            <div className="space-y-2">
+              {movie.cast.length ? (
+                movie.cast.slice(0, 12).map((actor) => (
+                  <Link
+                    key={`${actor.id}-${actor.name}`}
+                    href={`/actors/${actor.id}`}
+                    className="flex items-center gap-3 rounded-xl bg-white/5 p-2 transition hover:bg-white/10"
+                  >
+                    <div className="relative h-12 w-12 overflow-hidden rounded-full">
+                      <Image src={actor.profile || movie.poster} alt={actor.name} fill sizes="48px" className="object-cover" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{actor.name}</p>
+                      <p className="text-xs text-slate-400">{actor.character || dictionary.movieDetails.unknownRole}</p>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">{dictionary.movieDetails.noCast}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.crew}</h2>
+            <div className="space-y-2">
+              {movie.crew.length ? (
+                movie.crew.slice(0, 12).map((member) => (
+                  <div key={`${member.id}-${member.name}-${member.job}`} className="rounded-xl bg-white/5 p-2">
+                    <p className="text-sm font-semibold">{member.name}</p>
+                    <p className="text-xs text-slate-400">
+                      {member.job || dictionary.movieDetails.unknownJob}
+                      {member.department ? ` | ${member.department}` : ""}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">{dictionary.movieDetails.noCrew}</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.similar}</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {movie.similar.slice(0, 6).map((item) => (
+                <Link
+                  key={item.id ?? item.title}
+                  href={item.id ? `/movies/${item.id}` : "#"}
+                  className="overflow-hidden rounded-xl border border-white/10 bg-white/5"
+                >
+                  <div className="relative aspect-[2/3]">
+                    <Image src={item.image} alt={item.title} fill sizes="180px" className="object-cover" />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-semibold">{item.title}</p>
+                    <p className="text-[11px] text-slate-400">{item.rating.toFixed(1)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+            <h2 className="mb-3 text-xl font-bold">{dictionary.movieDetails.recommendations}</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {movie.recommendations.slice(0, 6).map((item) => (
+                <Link
+                  key={item.id ?? item.title}
+                  href={item.id ? `/movies/${item.id}` : "#"}
+                  className="overflow-hidden rounded-xl border border-white/10 bg-white/5"
+                >
+                  <div className="relative aspect-[2/3]">
+                    <Image src={item.image} alt={item.title} fill sizes="180px" className="object-cover" />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-semibold">{item.title}</p>
+                    <p className="text-[11px] text-slate-400">{item.rating.toFixed(1)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
       <Footer />
     </div>
   );

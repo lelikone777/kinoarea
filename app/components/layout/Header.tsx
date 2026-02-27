@@ -1,9 +1,19 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
 import { CloseIcon, MenuIcon } from "../icons";
+import { Button } from "../ui/Button";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
+import { useUiDictionary } from "@/app/hooks/useUiDictionary";
+
+type NavLink = {
+  label: string;
+  href: string;
+};
 
 type NavLink = {
   label: string;
@@ -15,11 +25,23 @@ type HeaderProps = {
 };
 
 export function Header({ navLinks }: HeaderProps) {
+  const { dictionary } = useUiDictionary();
+  const pathname = usePathname();
+  const router = useRouter();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const scrollPositionRef = useRef(0);
 
   const closeNav = () => setIsMobileNavOpen(false);
   const openNav = () => setIsMobileNavOpen(true);
+  const isLinkActive = (href: string) => {
+    if (!href.startsWith("/")) {
+      return false;
+    }
+    if (href === "/") {
+      return pathname === "/";
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -69,18 +91,18 @@ export function Header({ navLinks }: HeaderProps) {
           <div className="flex items-center gap-3">
             <button
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-100 transition hover:bg-white/10 lg:hidden"
-              aria-label="Открыть меню"
+              aria-label={dictionary.header.openMenu}
               onClick={openNav}
             >
               <MenuIcon className="h-5 w-5" />
             </button>
             <Link href="/" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 text-lg font-black text-slate-900 shadow-lg shadow-sky-500/30">
-                KA
+              <div className="relative h-12 w-12 overflow-hidden rounded-xl">
+                <Image src="/logo-kinoera.png" alt="Логотип КиноЭра" fill sizes="48px" className="object-cover" priority />
               </div>
               <div className="hidden sm:block">
-                <p className="text-lg font-bold">КиноАреа</p>
-                <p className="text-xs text-slate-400">афиша и билеты</p>
+                <p className="text-lg font-bold">КиноЭра</p>
+                <p className="text-xs text-slate-400">{dictionary.header.subtitle}</p>
               </div>
             </Link>
           </div>
@@ -90,26 +112,38 @@ export function Header({ navLinks }: HeaderProps) {
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-full px-3 py-1 transition hover:bg-white/5 hover:text-white"
+                aria-current={isLinkActive(item.href) ? "page" : undefined}
+                className={`rounded-full px-3 py-1 transition ${
+                  isLinkActive(item.href)
+                    ? "bg-sky-400 text-slate-950"
+                    : "hover:bg-white/5 hover:text-white"
+                }`}
               >
-                {item.label}
+                {dictionary.navByHref[item.href] ?? item.label}
               </Link>
             ))}
           </nav>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
             <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition hover:bg-white/10">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <Button variant="icon">
               <SearchIcon className="h-5 w-5 text-slate-200" />
-            </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition hover:bg-white/10">
+            </Button>
+            <Button variant="icon">
               <BellIcon className="h-5 w-5 text-slate-200" />
-            </button>
-            <button className="hidden items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-sky-500/25 transition hover:-translate-y-0.5 sm:flex">
+            </Button>
+            <LanguageSwitcher className="hidden sm:block" />
+            <Button
+              variant="cta"
+              onClick={() => router.push("/schedule")}
+              className="hidden sm:flex"
+            >
               <CalendarIcon className="h-4 w-4 text-sky-600" />
-              Расписание
-            </button>
-            <button className="rounded-xl border border-white/10 px-2.5 py-2 text-xs sm:text-sm font-semibold text-white transition hover:border-white/40">
-              Войти
+              {dictionary.header.schedule}
+            </Button>
+            <button className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40">
+              {dictionary.header.login}
             </button>
           </div>
         </div>
@@ -131,14 +165,14 @@ export function Header({ navLinks }: HeaderProps) {
           >
             <div className="flex items-center justify-between px-5 pt-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 text-sm font-black text-slate-900 shadow-lg shadow-sky-500/30">
-                  KA
+                <div className="relative h-10 w-10 overflow-hidden rounded-xl">
+                  <Image src="/logo-kinoera.png" alt="Логотип КиноЭра" fill sizes="40px" className="object-cover" priority />
                 </div>
-                <p className="text-base font-bold text-white">Kinoarea</p>
+                <p className="text-base font-bold text-white">КиноЭра</p>
               </div>
               <button
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-                aria-label="Закрыть меню"
+                aria-label={dictionary.header.closeMenu}
                 onClick={closeNav}
               >
                 <CloseIcon className="h-5 w-5" />
@@ -147,18 +181,23 @@ export function Header({ navLinks }: HeaderProps) {
             <div className="flex flex-1 items-center justify-center px-6 pb-8 pt-6">
               <div className="w-full max-w-sm max-h-[calc(100vh-140px)] overflow-y-auto rounded-3xl bg-slate-900/90 p-6 text-center shadow-2xl shadow-sky-500/20 ring-1 ring-white/10 backdrop-blur">
                 <div className="mb-6 flex flex-col items-center gap-2">
-                  <p className="text-lg font-bold text-white">Kinoarea</p>
-                  <p className="text-xs text-slate-400">медиа, фильмы и подборки</p>
+                  <p className="text-lg font-bold text-white">КиноЭра</p>
+                  <p className="text-xs text-slate-400">{dictionary.header.mobileSubtitle}</p>
                 </div>
                 <div className="flex flex-col items-center gap-3 pb-4 pt-2">
                   {navLinks.map((link) => (
                     <Link
                       key={link.label}
                       href={link.href}
-                      className="w-full rounded-2xl px-4 py-3 text-base font-semibold text-slate-100 transition hover:bg-white/10"
+                      aria-current={isLinkActive(link.href) ? "page" : undefined}
+                      className={`w-full rounded-2xl px-4 py-3 text-base font-semibold transition ${
+                        isLinkActive(link.href)
+                          ? "bg-sky-400 text-slate-950"
+                          : "text-slate-100 hover:bg-white/10"
+                      }`}
                       onClick={closeNav}
                     >
-                      {link.label}
+                      {dictionary.navByHref[link.href] ?? link.label}
                     </Link>
                   ))}
                 </div>
