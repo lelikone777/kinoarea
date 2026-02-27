@@ -66,58 +66,6 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     node.scrollBy({ left: delta, behavior: "smooth" });
   };
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "mouse" && event.buttons !== 1) return;
-    dragActive.current = true;
-    dragStartX.current = event.clientX;
-    setIsDragging(true);
-    setDragOffset(0);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragActive.current) return;
-    const delta = event.clientX - dragStartX.current;
-    setDragOffset(delta);
-  };
-
-  const endDrag = (event?: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragActive.current) return;
-    dragActive.current = false;
-    const delta = dragOffset;
-    const threshold = 50;
-    if (Math.abs(delta) > threshold) {
-      if (delta < 0) {
-        goToPage(currentPage + 1);
-      } else {
-        goToPage(currentPage - 1);
-      }
-    }
-    setIsDragging(false);
-    setDragOffset(0);
-    event?.currentTarget.releasePointerCapture?.(event.pointerId);
-  };
-
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-    if (delta === 0) return;
-    event.preventDefault();
-    if (wheelLock.current) return;
-    wheelAccum.current += delta;
-    const threshold = 60;
-    if (wheelAccum.current > threshold) {
-      wheelLock.current = true;
-      wheelAccum.current = 0;
-      goToPage(currentPage + 1);
-      setTimeout(() => (wheelLock.current = false), 250);
-    } else if (wheelAccum.current < -threshold) {
-      wheelLock.current = true;
-      wheelAccum.current = 0;
-      goToPage(currentPage - 1);
-      setTimeout(() => (wheelLock.current = false), 250);
-    }
-  };
-
   const handleYearSelect = async (year: number | "all") => {
     setSelectedYear(year);
     setPage(1);
@@ -141,13 +89,13 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
   };
 
   return (
-    <section className="mt-16 space-y-6">
-      <div className="flex items-center justify-between">
+    <section className="mt-16 space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h2 className="text-3xl font-extrabold sm:text-4xl">Популярные фильмы</h2>
           <div className="h-0.5 w-16 rounded-full bg-white/70" />
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+        <div className="flex w-full flex-wrap items-center gap-2 text-xs font-semibold text-slate-400 sm:w-auto sm:justify-end">
           <button
             onClick={() => handleYearSelect("all")}
             className={`rounded-full px-2 py-1 transition ${
@@ -156,7 +104,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           >
             Все время
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => scrollYears("prev")}
               className="rounded-full bg-white/5 px-2 py-1 text-white transition hover:bg-white/10"
@@ -166,7 +114,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
             <div
               ref={scrollYearsRef}
               data-year-scroll
-              className="flex max-w-[260px] items-center gap-2 overflow-x-auto pr-1"
+              className="flex max-w-[190px] min-[400px]:max-w-[240px] sm:max-w-[260px] items-center gap-2 overflow-x-auto pr-1"
             >
               {years.map((y) => (
                 <button
@@ -190,17 +138,17 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-slate-900/60 p-4 shadow-xl shadow-indigo-500/15">
-        <div className="absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/5 bg-slate-900/60 p-3 sm:p-4 shadow-xl shadow-indigo-500/15">
+        <div className="pointer-events-none absolute left-0 top-0 hidden h-full w-16 bg-gradient-to-r from-slate-950 to-transparent sm:block" />
+        <div className="pointer-events-none absolute right-0 top-0 hidden h-full w-16 bg-gradient-to-l from-slate-950 to-transparent sm:block" />
         <div
           ref={trackRef}
-          className="flex gap-4 overflow-x-auto scroll-smooth pr-4"
+          className="flex gap-3 sm:gap-4 overflow-x-auto scroll-smooth pr-2 sm:pr-4 snap-x snap-mandatory"
         >
           {filtered.map((movie) => (
             <div
               key={movie.title + movie.year}
-              className="min-w-[240px] max-w-[260px] flex-1 sm:min-w-[260px] lg:min-w-[260px]"
+              className="min-w-[82%] min-[420px]:min-w-[68%] sm:min-w-[260px] max-w-[260px] flex-1 snap-start"
             >
               <div className="group relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-1 hover:border-white/20">
                 <div className="relative aspect-[2/3]">
@@ -260,7 +208,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
         ) : null}
       </div>
 
-      <button className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40">
+      <button className="group inline-flex w-full justify-center sm:w-auto items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40">
         Смотреть все
         <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
       </button>

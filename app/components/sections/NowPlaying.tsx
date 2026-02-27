@@ -15,7 +15,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
           <p className="text-sm uppercase tracking-[0.18em] text-slate-400">
             Горячие сеансы сегодня
           </p>
-          <h1 className="text-3xl font-extrabold sm:text-4xl">Сейчас в прокате</h1>
+          <h1 className="text-2xl font-extrabold leading-tight sm:text-4xl">Сейчас в прокате</h1>
           <p className="mt-1 text-sm text-slate-400">
             Смотрите свежие премьеры в любимых форматах и выбирайте удобные сеансы по
             городу.
@@ -26,7 +26,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
         </button>
       </div>
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-4 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {filters.map((filter) => (
           <button
             key={filter}
@@ -36,7 +36,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
           </button>
         ))}
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {movies.map((movie, index) => {
           const isNinth = index === 8;
           return (

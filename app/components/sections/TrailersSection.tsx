@@ -25,16 +25,16 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
 
   return (
     <section className="mt-14 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-extrabold">Трейлеры недели</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-2xl font-extrabold leading-tight">Трейлеры недели</h2>
         <button className="group flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/5">
           Все трейлеры
           <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
         </button>
       </div>
-      <div className="overflow-hidden rounded-3xl border border-white/5 bg-white/5 shadow-xl shadow-sky-500/10">
-        <div className="grid gap-4 p-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:auto-rows-[minmax(180px,1fr)]">
-          <div className="relative h-[340px] overflow-hidden rounded-2xl sm:col-span-2 sm:h-[420px] lg:col-span-2 lg:row-span-2 lg:h-full">
+      <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-white/5 bg-white/5 shadow-xl shadow-sky-500/10">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-3 lg:auto-rows-[minmax(180px,1fr)]">
+          <div className="relative h-[300px] min-[420px]:h-[340px] overflow-hidden rounded-2xl sm:col-span-2 sm:h-[420px] lg:col-span-2 lg:row-span-2 lg:h-full">
             <Image
               src={hero.image}
               alt={hero.title}
@@ -48,7 +48,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
               <PlayIcon className="h-4 w-4 text-emerald-300" />
               {hero.tag}
             </div>
-            <div className="absolute left-6 right-6 bottom-6 flex flex-col gap-4 sm:max-w-xl">
+            <div className="absolute left-4 right-4 bottom-4 sm:left-6 sm:right-6 sm:bottom-6 flex flex-col gap-3 sm:gap-4 sm:max-w-xl">
               <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
                 <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">
                   Экшн
@@ -62,8 +62,8 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
                 </span>
               </div>
               <div>
-                <h3 className="text-3xl font-extrabold sm:text-4xl">{hero.title}</h3>
-                <p className="mt-2 max-w-2xl text-base text-slate-200">{hero.description}</p>
+                <h3 className="text-2xl font-extrabold leading-tight sm:text-4xl">{hero.title}</h3>
+                <p className="mt-2 max-w-2xl text-sm sm:text-base text-slate-200">{hero.description}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-sky-500/30">
