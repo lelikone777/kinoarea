@@ -1,12 +1,13 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Header } from "../components/layout/Header";
-import { Footer } from "../components/layout/Footer";
-import { navLinks } from "../data/content";
+import { PageShell } from "../components/layout/PageShell";
 import { StyledSelect, type StyledSelectOption } from "../components/ui/StyledSelect";
+import { Button } from "../components/ui/Button";
+import { ErrorCard, InfoCard } from "../components/ui/Cards";
+import { PaginationToolbar } from "../components/ui/PaginationToolbar";
+import { CatalogGridCard } from "../components/ui/CatalogGridCard";
 
 type CatalogMovie = {
   id: number;
@@ -208,10 +209,7 @@ export default function MoviesPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
-      <Header navLinks={navLinks} />
-
-      <main className="relative z-10 mx-auto flex-1 max-w-6xl space-y-6 px-5 pb-24 pt-10">
+    <PageShell>
         <div className="space-y-2">
           <h1 className="text-3xl font-extrabold sm:text-4xl">Каталог фильмов TMDB</h1>
           <p className="text-sm text-slate-300">Ищите и фильтруйте фильмы с помощью API The Movie Database.</p>
@@ -266,7 +264,7 @@ export default function MoviesPage() {
             placeholder="Сортировка"
           />
 
-          <button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900">Найти</button>
+          <Button variant="cta">Найти</Button>
         </form>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -279,113 +277,45 @@ export default function MoviesPage() {
             </div>
           )}
 
-          <div className="ml-auto flex w-full max-w-2xl flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 text-sm text-slate-200">
-            <span className="px-2 text-xs uppercase tracking-[0.12em] text-slate-400">Страницы</span>
-            <span className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate-300">← {leftPages}</span>
-            <button
-              type="button"
-              onClick={() => goToPage(page - 10)}
-              disabled={isLoading || page <= 1}
-              className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs transition hover:border-white/40 disabled:opacity-40"
-            >
-              -10
-            </button>
-            <button
-              type="button"
-              onClick={() => goToPage(page - 1)}
-              disabled={isLoading || page <= 1}
-              className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs transition hover:border-white/40 disabled:opacity-40"
-            >
-              ←
-            </button>
-
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                const parsed = Number.parseInt(pageInput.trim(), 10);
-                if (!Number.isFinite(parsed)) {
-                  setPageInput(String(page));
-                  return;
-                }
-                goToPage(parsed);
-              }}
-              className="flex items-center gap-2"
-            >
-              <input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={pageInput}
-                onChange={(event) => setPageInput(event.target.value.replace(/[^\d]/g, ""))}
-                className="w-20 rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-center text-sm text-white outline-none transition focus:border-sky-300/60"
-                aria-label="Номер страницы"
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 transition hover:opacity-90 disabled:opacity-50"
-              >
-                Перейти
-              </button>
-            </form>
-
-            <span className="px-1 text-xs text-slate-400">/ {totalPages}</span>
-            <button
-              type="button"
-              onClick={() => goToPage(page + 1)}
-              disabled={isLoading || page >= totalPages}
-              className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs transition hover:border-white/40 disabled:opacity-40"
-            >
-              →
-            </button>
-            <button
-              type="button"
-              onClick={() => goToPage(page + 10)}
-              disabled={isLoading || page >= totalPages}
-              className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs transition hover:border-white/40 disabled:opacity-40"
-            >
-              +10
-            </button>
-            <span className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate-300">{rightPages} →</span>
-          </div>
+          <PaginationToolbar
+            isLoading={isLoading}
+            page={page}
+            totalPages={totalPages}
+            pageInput={pageInput}
+            leftPages={leftPages}
+            rightPages={rightPages}
+            onPageInputChange={setPageInput}
+            onGoToPage={goToPage}
+            onSubmitPage={() => {
+              const parsed = Number.parseInt(pageInput.trim(), 10);
+              if (!Number.isFinite(parsed)) {
+                setPageInput(String(page));
+                return;
+              }
+              goToPage(parsed);
+            }}
+          />
         </div>
 
-        {error ? (
-          <div className="rounded-2xl border border-rose-300/40 bg-rose-500/10 p-4 text-rose-200">{error}</div>
-        ) : null}
+        {error ? <ErrorCard>{error}</ErrorCard> : null}
 
         {!isLoading && !error && items.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 text-slate-300">
+          <InfoCard>
             {hasFilters ? "По текущим фильтрам фильмы не найдены." : "Сейчас фильмы недоступны."}
-          </div>
+          </InfoCard>
         ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {items.map((movie) => (
-            <article
+            <CatalogGridCard
               key={movie.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => router.push(`/movies/${movie.id}`)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  router.push(`/movies/${movie.id}`);
-                }
-              }}
-              className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition hover:-translate-y-1 hover:border-sky-300/40"
-            >
-              <div className="relative aspect-[2/3]">
-                <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
-              </div>
-
-              <div className="space-y-2 p-3">
-                <p className="line-clamp-1 font-semibold text-white">{movie.title}</p>
-                <p className="text-xs uppercase tracking-wide text-slate-300">
-                  {movie.year ?? "Год неизвестен"} | рейтинг {movie.rating.toFixed(1)}
-                </p>
-                <p className="line-clamp-2 text-xs text-slate-400">{movie.overview || "Описание отсутствует."}</p>
-              </div>
-            </article>
+              imageSrc={movie.poster}
+              imageAlt={movie.title}
+              title={movie.title}
+              meta={`${movie.year ?? "Год неизвестен"} | рейтинг ${movie.rating.toFixed(1)}`}
+              description={movie.overview || "Описание отсутствует."}
+              onActivate={() => router.push(`/movies/${movie.id}`)}
+            />
           ))}
         </div>
 
@@ -400,10 +330,7 @@ export default function MoviesPage() {
             </button>
           </div>
         ) : null}
-      </main>
-
-      <Footer />
-    </div>
+    </PageShell>
   );
 }
 

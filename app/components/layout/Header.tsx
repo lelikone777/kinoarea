@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
 import { CloseIcon, MenuIcon } from "../icons";
-import { ctaWhiteButtonClass } from "../ui/buttonStyles";
+import { Button } from "../ui/Button";
 
 type NavLink = {
   label: string;
@@ -117,20 +117,20 @@ export function Header({ navLinks }: HeaderProps) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition hover:bg-white/10">
+            <Button variant="icon">
               <SearchIcon className="h-5 w-5 text-slate-200" />
-            </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition hover:bg-white/10">
+            </Button>
+            <Button variant="icon">
               <BellIcon className="h-5 w-5 text-slate-200" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="cta"
               onClick={() => router.push("/schedule")}
-              className={`${ctaWhiteButtonClass} hidden sm:flex`}
+              className="hidden sm:flex"
             >
               <CalendarIcon className="h-4 w-4 text-sky-600" />
               Расписание
-            </button>
+            </Button>
             <button className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40">
               Войти
             </button>
