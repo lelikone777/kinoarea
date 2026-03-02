@@ -1,11 +1,17 @@
-﻿"use client";
+"use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, CalendarIcon, SearchIcon } from "../icons";
 import { CloseIcon, MenuIcon } from "../icons";
 
+type NavLink = {
+  label: string;
+  href: string;
+};
+
 type HeaderProps = {
-  navLinks: string[];
+  navLinks: NavLink[];
 };
 
 export function Header({ navLinks }: HeaderProps) {
@@ -59,7 +65,7 @@ export function Header({ navLinks }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-white/5 bg-slate-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 sm:gap-3 px-3 py-3 sm:px-5 sm:py-4">
           <div className="flex items-center gap-3">
             <button
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-100 transition hover:bg-white/10 lg:hidden"
@@ -68,7 +74,7 @@ export function Header({ navLinks }: HeaderProps) {
             >
               <MenuIcon className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 text-lg font-black text-slate-900 shadow-lg shadow-sky-500/30">
                 KA
               </div>
@@ -76,22 +82,22 @@ export function Header({ navLinks }: HeaderProps) {
                 <p className="text-lg font-bold">КиноАреа</p>
                 <p className="text-xs text-slate-400">афиша и билеты</p>
               </div>
-            </div>
+            </Link>
           </div>
 
           <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-semibold text-slate-200 lg:flex">
             {navLinks.map((item) => (
-              <a
-                key={item}
-                href="#"
+              <Link
+                key={item.label}
+                href={item.href}
                 className="rounded-full px-3 py-1 transition hover:bg-white/5 hover:text-white"
               >
-                {item}
-              </a>
+                {item.label}
+              </Link>
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
             <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition hover:bg-white/10">
               <SearchIcon className="h-5 w-5 text-slate-200" />
             </button>
@@ -102,7 +108,7 @@ export function Header({ navLinks }: HeaderProps) {
               <CalendarIcon className="h-4 w-4 text-sky-600" />
               Расписание
             </button>
-            <button className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40">
+            <button className="rounded-xl border border-white/10 px-2.5 py-2 text-xs sm:text-sm font-semibold text-white transition hover:border-white/40">
               Войти
             </button>
           </div>
@@ -146,14 +152,14 @@ export function Header({ navLinks }: HeaderProps) {
                 </div>
                 <div className="flex flex-col items-center gap-3 pb-4 pt-2">
                   {navLinks.map((link) => (
-                    <a
-                      key={link}
-                      href="#"
+                    <Link
+                      key={link.label}
+                      href={link.href}
                       className="w-full rounded-2xl px-4 py-3 text-base font-semibold text-slate-100 transition hover:bg-white/10"
                       onClick={closeNav}
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   ))}
                 </div>
               </div>

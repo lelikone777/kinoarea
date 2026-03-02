@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎬 Kinoarea
 
-## Getting Started
+**Kinoarea** — веб-приложение о фильмах на **Next.js 16**.
 
-First, run the development server:
+Проект объединяет:
+- главную страницу с секциями (сейчас в кино, трейлеры, популярные фильмы, люди, новости);
+- каталог фильмов на базе IMDb-данных (через OMDb API);
+- страницу детальной информации по фильму.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🚀 Технологии
+
+- **Next.js 16** (App Router)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS 4**
+- Интеграции с внешними API:
+  - **OMDb** (для IMDb-каталога)
+  - **TMDB** (для динамических блоков на главной)
+
+---
+
+## 📁 Основные маршруты
+
+- `/` — главная страница портала.
+- `/movies` — каталог IMDb с фильтрами (поиск, год, тип: фильм/сериал).
+- `/movies/[id]` — детальная страница фильма.
+- `/api/imdb/search` — backend-эндпоинт поиска фильмов.
+- `/api/imdb/movies/[id]` — backend-эндпоинт деталей фильма.
+- `/api/popular-movies` — backend-эндпоинт популярных фильмов.
+
+---
+
+## ⚙️ Переменные окружения
+
+Создайте файл `.env.local` в корне проекта:
+
+```env
+# Для IMDb-каталога (/movies и /movies/[id])
+OMDB_API_KEY=your_omdb_api_key
+# альтернативно (если уже используете public-переменные):
+# NEXT_PUBLIC_OMDB_API_KEY=your_omdb_api_key
+
+# Для динамических данных с TMDB на главной
+TMDB_ACCESS_TOKEN=your_tmdb_access_token
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> Если `OMDB_API_KEY` (или `NEXT_PUBLIC_OMDB_API_KEY`) не задан, IMDb-маршруты и страницы каталога не смогут загрузить реальные данные.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Для удобства есть шаблон:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🧑‍💻 Локальный запуск
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Откройте: [http://localhost:3000](http://localhost:3000)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ✅ Проверка перед деплоем
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+npm run build
+```
+
+---
+
+## 📌 Примечание
+
+Источником IMDb-данных в проекте выступает **OMDb API** (посредник с IMDb-метаданными).  
+Для корректной работы на сервере нужно добавить переменные окружения в настройки среды деплоя (например, Vercel Project Settings → Environment Variables).

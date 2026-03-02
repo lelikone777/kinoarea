@@ -79,7 +79,7 @@ export default async function Home() {
 
       <Header navLinks={navLinks} />
 
-      <main className="relative z-10 mx-auto max-w-6xl px-5 pb-24 pt-10">
+      <main className="relative z-10 mx-auto max-w-6xl px-3 sm:px-5 pb-20 sm:pb-24 pt-8 sm:pt-10">
         <NowPlaying movies={nowPlayingLimited} filters={nowFilters} />
         <TrailersSection hero={featuredHero ?? trailerHero} trailers={normalizedTrailers} />
         <PopularMovies movies={popularFilled} />

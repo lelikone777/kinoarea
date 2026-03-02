@@ -9,8 +9,8 @@ type BoxOfficeSectionProps = {
 export function BoxOfficeSection({ entries }: BoxOfficeSectionProps) {
   return (
     <section className="mt-14 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-2xl font-extrabold">Кассовые сборы</h2>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
             за уикенд
@@ -25,9 +25,9 @@ export function BoxOfficeSection({ entries }: BoxOfficeSectionProps) {
         {entries.map((entry) => (
           <div
             key={entry.title}
-            className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 p-3 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-0.5 hover:border-white/20"
+            className="flex items-start sm:items-center gap-3 rounded-2xl border border-white/5 bg-white/5 p-3 shadow-lg shadow-indigo-500/10 transition hover:-translate-y-0.5 hover:border-white/20"
           >
-            <div className="relative h-20 w-16 overflow-hidden rounded-xl">
+            <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-xl">
               <Image
                 src={entry.image}
                 alt={entry.title}

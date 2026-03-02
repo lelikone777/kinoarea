@@ -9,11 +9,11 @@ type UpcomingSectionProps = {
 export function UpcomingSection({ movies }: UpcomingSectionProps) {
   return (
     <section className="mt-14 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-extrabold">Скоро на экранах</h2>
         <span className="text-xs text-slate-400">Топ ожиданий — фильмы и сериалы</span>
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
         {movies.map((movie) => (
           <div
             key={movie.title}
@@ -34,7 +34,7 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
                 </span>
               ) : null}
               <div className="absolute bottom-3 left-3 right-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-amber-300 backdrop-blur">
                     <StarIcon className="h-4 w-4 text-amber-300" />
                     {movie.rating.toFixed(1)}
@@ -43,7 +43,7 @@ export function UpcomingSection({ movies }: UpcomingSectionProps) {
                     Жду!
                   </button>
                 </div>
-                <p className="mt-3 text-lg font-bold leading-6">{movie.title}</p>
+                <p className="mt-3 text-base sm:text-lg font-bold leading-6">{movie.title}</p>
                 <p className="text-sm text-slate-300">{movie.genre}</p>
               </div>
             </div>

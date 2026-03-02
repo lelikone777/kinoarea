@@ -2,11 +2,11 @@ import Image from "next/image";
 
 export function NewsletterSection() {
   return (
-    <section className="mt-16 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-blue-800 via-indigo-700 to-sky-500 p-8 shadow-2xl shadow-blue-500/30">
+    <section className="mt-16 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/5 bg-gradient-to-br from-blue-800 via-indigo-700 to-sky-500 p-5 sm:p-8 shadow-2xl shadow-blue-500/30">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.2em] text-sky-200">Подборка недели</p>
-          <h3 className="text-3xl font-extrabold text-white">
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
             Подписка на e-mail с лучшими трейлерами и премьерами
           </h3>
           <p className="max-w-xl text-sm text-sky-100">
