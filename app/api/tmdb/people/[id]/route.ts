@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPersonFullDetails, isTmdbReachable } from "@/app/lib/tmdb";
+import { getPersonFullDetails } from "@/app/lib/tmdb";
 import { normalizeSiteLanguage } from "@/app/lib/language";
 
 type RouteContext = {
@@ -13,15 +13,10 @@ export async function GET(request: Request, { params }: RouteContext) {
   const language = normalizeSiteLanguage(searchParams.get("language"));
 
   if (!Number.isFinite(personId) || personId <= 0) {
-    return NextResponse.json({ error: "Некорректный id актера." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid actor id." }, { status: 400 });
   }
 
   try {
-    const tmdbAvailable = await isTmdbReachable();
-    if (!tmdbAvailable) {
-      return NextResponse.json({ error: "TMDB недоступен: DNS резолвит API в localhost." }, { status: 503 });
-    }
-
     const person = await getPersonFullDetails(personId, language);
     return NextResponse.json(person);
   } catch (error) {
@@ -29,4 +24,3 @@ export async function GET(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

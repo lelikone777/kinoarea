@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCatalogPeople, isTmdbReachable } from "@/app/lib/tmdb";
+import { getCatalogPeople } from "@/app/lib/tmdb";
 import { normalizeSiteLanguage } from "@/app/lib/language";
 
 export async function GET(request: Request) {
@@ -12,11 +12,6 @@ export async function GET(request: Request) {
   const sortBy = sortByParam === "popularity.desc" ? sortByParam : "popularity.desc";
 
   try {
-    const tmdbAvailable = await isTmdbReachable();
-    if (!tmdbAvailable) {
-      return NextResponse.json({ error: "TMDB недоступен: DNS резолвит API в localhost." }, { status: 503 });
-    }
-
     const people = await getCatalogPeople({
       query,
       page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -30,4 +25,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

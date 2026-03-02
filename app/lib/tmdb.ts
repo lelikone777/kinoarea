@@ -364,11 +364,6 @@ async function fetchTmdbNetwork<T>(
   params: Record<string, string | number | undefined>,
   revalidateSeconds: number,
 ): Promise<T> {
-  const reachable = await isTmdbReachable();
-  if (!reachable) {
-    throw new TmdbRequestError("TMDB network error: DNS/proxy resolves TMDB API to localhost.");
-  }
-
   const auth = resolveTmdbAuth();
   const url = new URL(`${TMDB_BASE_URL}${path}`);
   if (auth.apiKey) {

@@ -17,7 +17,6 @@ import {
   getWeeklyTrailers,
   getFeaturedTrailerHero,
   getPopularPeople,
-  isTmdbReachable,
 } from "./lib/tmdb";
 import { cookies, headers } from "next/headers";
 import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
@@ -40,7 +39,7 @@ export default async function Home() {
   });
   const dictionary = getUiDictionary(language);
   const hasTmdbAuth = Boolean(process.env.TMDB_ACCESS_TOKEN || process.env.TMDB_API_KEY);
-  const canUseTmdb = hasTmdbAuth ? await isTmdbReachable() : false;
+  const canUseTmdb = hasTmdbAuth;
 
   const [
     popular,
