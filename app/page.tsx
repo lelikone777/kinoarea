@@ -8,9 +8,9 @@ import {
   peopleBoard,
   newsArticles,
   upcomingMovies,
-  boxOffice,
 } from "./data/content";
 import {
+  getBoxOfficeMovies,
   getPopularMovies,
   getNowPlayingMovies,
   getUpcomingMovies,
@@ -52,6 +52,7 @@ export default async function Home() {
     peopleMonth,
     peopleYear,
     industryNews,
+    boxOfficeDynamic,
   ] = await Promise.all([
     canUseTmdb ? getPopularMovies(60, undefined, language).catch(() => popularMovies) : Promise.resolve(popularMovies),
     canUseTmdb ? getNowPlayingMovies(undefined, language).catch(() => nowPlaying) : Promise.resolve(nowPlaying),
@@ -62,6 +63,9 @@ export default async function Home() {
     canUseTmdb ? getPopularPeople(10, 2, language).catch(() => null) : Promise.resolve(null),
     canUseTmdb ? getPopularPeople(10, 3, language).catch(() => null) : Promise.resolve(null),
     getIndustryNews(language).catch(() => newsArticles),
+    canUseTmdb
+      ? getBoxOfficeMovies({ language, period: "weekend", sortBy: "revenue.desc", limit: 6 }).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
@@ -100,7 +104,7 @@ export default async function Home() {
       />
       <NewsSection articles={industryNews.length ? industryNews : newsArticles} />
       <UpcomingSection movies={upcomingDynamic} />
-      <BoxOfficeSection entries={boxOffice} />
+      <BoxOfficeSection entries={boxOfficeDynamic} language={language} />
       <NewsletterSection />
     </PageShell>
   );

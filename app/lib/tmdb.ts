@@ -1,4 +1,4 @@
-﻿import type { Movie, Person, Trailer } from "../data/content";
+﻿import type { BoxOffice, Movie, Person, Trailer } from "../data/content";
 import type { TrailerHero } from "../components/sections/TrailersSection";
 import { getLanguageBase, normalizeSiteLanguage, type SiteLanguage } from "./language";
 import { createSwrMemoryCache } from "./swrMemoryCache";
@@ -55,6 +55,21 @@ export type TmdbCatalogSortBy =
   | "vote_average.desc"
   | "release_date.desc"
   | "revenue.desc";
+
+export type TmdbBoxOfficePeriod = "weekend" | "month" | "year" | "all";
+export type TmdbBoxOfficeSortBy = "revenue.desc" | "popularity.desc" | "vote_average.desc" | "release_date.desc";
+export type TmdbBoxOfficeReleaseType = "all" | "theatrical";
+
+type BoxOfficeInput = {
+  language?: SiteLanguage;
+  period?: TmdbBoxOfficePeriod;
+  sortBy?: TmdbBoxOfficeSortBy;
+  region?: string;
+  genreId?: number;
+  originalLanguage?: string;
+  releaseType?: TmdbBoxOfficeReleaseType;
+  limit?: number;
+};
 
 export type TmdbCatalogMovie = {
   id: number;
@@ -666,6 +681,186 @@ export async function getUpcomingMovies(limit = 8, language: SiteLanguage = "ru-
     page: 1,
   });
   return results.slice(0, limit).map((movie) => mapMovie(movie, ctx, ctx.labels.soonTag));
+}
+
+function toIsoDate(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getPeriodRange(period: TmdbBoxOfficePeriod) {
+  const now = new Date();
+  const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  if (period === "all") return null;
+
+  if (period === "year") {
+    const start = new Date(Date.UTC(todayUtc.getUTCFullYear(), 0, 1));
+    return { start: toIsoDate(start), end: toIsoDate(todayUtc) };
+  }
+
+  if (period === "month") {
+    const start = new Date(Date.UTC(todayUtc.getUTCFullYear(), todayUtc.getUTCMonth(), 1));
+    return { start: toIsoDate(start), end: toIsoDate(todayUtc) };
+  }
+
+  const day = todayUtc.getUTCDay();
+  const daysFromSunday = day;
+  const lastSunday = new Date(todayUtc);
+  lastSunday.setUTCDate(todayUtc.getUTCDate() - daysFromSunday);
+  const lastFriday = new Date(lastSunday);
+  lastFriday.setUTCDate(lastSunday.getUTCDate() - 2);
+  return { start: toIsoDate(lastFriday), end: toIsoDate(lastSunday) };
+}
+
+function formatUsdCurrency(value: number, language: SiteLanguage) {
+  const locale =
+    language === "ru-RU"
+      ? "ru-RU"
+      : language === "pt-BR"
+        ? "pt-BR"
+        : language === "es-ES"
+          ? "es-ES"
+          : language === "de-DE"
+            ? "de-DE"
+            : "en-US";
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatDeltaPercent(current: number, previous: number) {
+  if (current <= 0 || previous <= 0) return "—";
+  const value = ((current - previous) / previous) * 100;
+  const rounded = Math.round(value);
+  if (rounded === 0) return "0%";
+  return `${rounded > 0 ? "+" : ""}${rounded}%`;
+}
+
+export async function getBoxOfficeMovies(input: BoxOfficeInput = {}): Promise<BoxOffice[]> {
+  const normalizedLanguage = normalizeSiteLanguage(input.language);
+  const period = input.period ?? "weekend";
+  const sortBy = input.sortBy ?? "revenue.desc";
+  const region = (input.region ?? "RU").toUpperCase();
+  const releaseType = input.releaseType ?? "theatrical";
+  const limit =
+    Number.isFinite(input.limit) && Number(input.limit) > 0
+      ? Math.min(12, Math.trunc(Number(input.limit)))
+      : 6;
+  const genreId =
+    Number.isFinite(input.genreId) && Number(input.genreId) > 0
+      ? Math.trunc(Number(input.genreId))
+      : undefined;
+  const originalLanguage =
+    input.originalLanguage && /^[a-z]{2}$/i.test(input.originalLanguage)
+      ? input.originalLanguage.toLowerCase()
+      : undefined;
+
+  const ctx = await getAssetsContext(normalizedLanguage);
+  const params: Record<string, string | number | undefined> = {
+    language: normalizedLanguage,
+    page: 1,
+    include_adult: "false",
+    include_video: "false",
+    sort_by: period === "weekend" ? undefined : sortBy,
+    "vote_count.gte": 40,
+    with_release_type: releaseType === "theatrical" ? "2|3" : undefined,
+    region: region === "ALL" ? undefined : region,
+    with_genres: genreId,
+    with_original_language: originalLanguage,
+  };
+
+  const periodRange = getPeriodRange(period);
+  if (period !== "weekend" && periodRange) {
+    params["primary_release_date.gte"] = periodRange.start;
+    params["primary_release_date.lte"] = periodRange.end;
+  }
+
+  const endpoint = period === "weekend" ? "/movie/now_playing" : "/discover/movie";
+  let discovered: { results: TmdbMovie[] };
+  try {
+    discovered = await tmdbFetch<{ results: TmdbMovie[] }>(endpoint, params);
+  } catch {
+    discovered = await tmdbFetch<{ results: TmdbMovie[] }>("/movie/now_playing", {
+      language: normalizedLanguage,
+      page: 1,
+      include_adult: "false",
+      include_video: "false",
+      region: region === "ALL" ? undefined : region,
+    });
+  }
+  const candidates = discovered.results.slice(0, Math.max(limit * 4, 16));
+
+  const detailed = await Promise.all(
+    candidates.map(async (movie) => {
+      try {
+        const details = await tmdbFetch<{ id: number; revenue?: number; poster_path: string | null }>(
+          `/movie/${movie.id}`,
+          { language: normalizedLanguage },
+          60 * 30
+        );
+        return {
+          ...movie,
+          revenue: details.revenue ?? 0,
+          poster_path: details.poster_path ?? movie.poster_path,
+        };
+      } catch {
+        return { ...movie, revenue: 0 };
+      }
+    })
+  );
+
+  let ranked = [...detailed]
+    .sort((a, b) => {
+      if (sortBy === "revenue.desc") return (b.revenue ?? 0) - (a.revenue ?? 0);
+      if (sortBy === "popularity.desc") return (b.popularity ?? 0) - (a.popularity ?? 0);
+      if (sortBy === "vote_average.desc") return (b.vote_average ?? 0) - (a.vote_average ?? 0);
+      const aDate = a.release_date ? new Date(a.release_date).getTime() : 0;
+      const bDate = b.release_date ? new Date(b.release_date).getTime() : 0;
+      return bDate - aDate;
+    })
+    .slice(0, limit);
+
+  if (!ranked.length) {
+    try {
+      const fallbackParams: Record<string, string | number | undefined> = {
+        language: normalizedLanguage,
+        page: 1,
+        include_adult: "false",
+        include_video: "false",
+        sort_by: "revenue.desc",
+        "vote_count.gte": 20,
+        region: region === "ALL" ? undefined : region,
+      };
+      const fallbackDiscover = await tmdbFetch<{ results: TmdbMovie[] }>("/discover/movie", fallbackParams);
+      ranked = fallbackDiscover.results.slice(0, limit).map((movie) => ({ ...movie, revenue: 0 }));
+    } catch {
+      const nowPlayingFallback = await tmdbFetch<{ results: TmdbMovie[] }>("/movie/now_playing", {
+        language: normalizedLanguage,
+        page: 1,
+        region: region === "ALL" ? undefined : region,
+      });
+      ranked = nowPlayingFallback.results.slice(0, limit).map((movie) => ({ ...movie, revenue: 0 }));
+    }
+  }
+
+  return ranked.map((movie, index) => {
+    const revenue = movie.revenue ?? 0;
+    const previousRevenue = index > 0 ? ranked[index - 1]?.revenue ?? 0 : 0;
+    return {
+      id: movie.id,
+      place: `${index + 1} место`,
+      title: movie.title,
+      amount: revenue > 0 ? formatUsdCurrency(revenue, normalizedLanguage) : "Нет данных",
+      change: index === 0 ? "—" : formatDeltaPercent(revenue, previousRevenue),
+      image: movie.poster_path ? `${ctx.base}${ctx.posterSize}${movie.poster_path}` : FALLBACK_POSTER,
+    };
+  });
 }
 
 function normalizeVideoType(type: string) {
@@ -1367,4 +1562,5 @@ export async function getPopularPeople(limit = 10, page = 1, language: SiteLangu
     };
   });
 }
+
 

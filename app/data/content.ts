@@ -49,6 +49,7 @@ export type News = {
 };
 
 export type BoxOffice = {
+  id?: number;
   title: string;
   amount: string;
   change: string;
