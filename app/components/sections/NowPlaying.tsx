@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRightIcon, StarIcon } from "../icons";
 import { LinkButton } from "../ui/Button";
 import type { Movie } from "../../data/content";
@@ -21,10 +21,17 @@ type FilterOption = {
   label: string;
 };
 
+const CAROUSEL_GAP_PX = 16; // gap-4
+
 export function NowPlaying({ movies, filters }: NowPlayingProps) {
   const { dictionary } = useUiDictionary();
   const premieresFilter = filters[0] ?? "Премьеры";
   const popularFilter = filters[1] ?? "Популярные";
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const [page, setPage] = useState(1);
+  const [cardsPerPage, setCardsPerPage] = useState(4);
 
   const normalize = (value: string) => value.trim().toLocaleLowerCase();
 
@@ -152,6 +159,81 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
     );
   }, [effectiveActiveFilter, movies]);
 
+  useEffect(() => {
+    cardRefs.current = [];
+    setPage(1);
+    requestAnimationFrame(() => {
+      cardRefs.current[0]?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    });
+  }, [effectiveActiveFilter]);
+
+  useEffect(() => {
+    const node = trackRef.current;
+    if (!node) return;
+
+    const computeCardsPerPage = () => {
+      const firstCard = cardRefs.current.find(Boolean);
+      const cardWidth = firstCard?.offsetWidth ?? 0;
+      if (!cardWidth) {
+        setCardsPerPage(1);
+        return;
+      }
+      const visible = Math.max(1, Math.floor(node.clientWidth / (cardWidth + CAROUSEL_GAP_PX)));
+      setCardsPerPage(visible);
+    };
+
+    computeCardsPerPage();
+
+    const ro = new ResizeObserver(() => computeCardsPerPage());
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [filteredMovies.length]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMovies.length / cardsPerPage));
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    setPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    const node = trackRef.current;
+    if (!node) return;
+    const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (!cards.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let best: { index: number; ratio: number } | null = null;
+        for (const entry of entries) {
+          if (!entry.isIntersecting) return;
+          const indexAttr = (entry.target as HTMLElement).dataset.index;
+          if (indexAttr === undefined) return;
+          const index = Number(indexAttr);
+          if (Number.isNaN(index)) return;
+          if (!best || entry.intersectionRatio > best.ratio || (entry.intersectionRatio === best.ratio && index < best.index)) {
+            best = { index, ratio: entry.intersectionRatio };
+          }
+        }
+        if (!best) return;
+        const nextPage = Math.max(1, Math.floor(best.index / cardsPerPage) + 1);
+        setPage(nextPage);
+      },
+      { root: node, threshold: [0.3, 0.6, 1] }
+    );
+
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [filteredMovies.length, cardsPerPage]);
+
+  const scrollToPage = (nextPage: number) => {
+    const safePage = Math.max(1, Math.min(nextPage, totalPages));
+    const targetIndex = (safePage - 1) * cardsPerPage;
+    const targetCard = cardRefs.current[targetIndex];
+    if (!targetCard) return;
+    targetCard.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+  };
+
   return (
     <section>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -185,66 +267,124 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
           {dictionary.nowPlaying.noResults}
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {filteredMovies.map((movie, index) => {
-            const isNinth = index === 8;
-            const isClickable = Boolean(movie.id);
+        <div className="mt-6">
+          <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-slate-900/60 p-4 shadow-xl shadow-indigo-500/15">
+            <div className="absolute left-0 top-0 h-full w-16 pointer-events-none bg-gradient-to-r from-slate-950 to-transparent" />
+            <div className="absolute right-0 top-0 h-full w-16 pointer-events-none bg-gradient-to-l from-slate-950 to-transparent" />
 
-            return (
-              <div
-                key={`${movie.id ?? movie.title}-${index}`}
-                className={`group relative overflow-hidden rounded-2xl bg-white/5 shadow-lg shadow-sky-500/10 ${
-                  isNinth ? "hidden sm:block lg:hidden" : ""
-                } ${isClickable ? "cursor-pointer" : ""}`}
-              >
-                <div className="relative aspect-[2/3]">
-                  <Image
-                    src={movie.image}
-                    alt={movie.title}
-                    fill
-                    sizes="(max-width: 1024px) 50vw, 23vw"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-                  <div className="absolute left-3 top-3 z-20 flex items-center gap-2">
-                    {movie.badge ? (
-                      <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-slate-950 shadow">
-                        {movie.badge}
-                      </span>
-                    ) : null}
-                    {movie.tag ? (
-                      <span className="cursor-pointer rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
-                        {movie.tag}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <div className="flex items-center justify-between">
-                      <span className="rounded-full bg-black/70 px-2 py-1 text-xs font-semibold text-amber-300 backdrop-blur">
-                        <span className="inline-flex items-center gap-1">
-                          <StarIcon className="h-4 w-4 text-amber-400" />
-                          {movie.rating.toFixed(1)}
-                        </span>
-                      </span>
-                      <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
-                        {dictionary.nowPlaying.details}
-                      </span>
+            <div
+              ref={trackRef}
+              data-now-track
+              className="now-track-mask flex gap-4 overflow-x-auto scroll-smooth pr-4 snap-x snap-mandatory flex-nowrap touch-pan-x"
+            >
+              {filteredMovies.map((movie, index) => {
+                const isClickable = Boolean(movie.id);
+
+                return (
+                  <div
+                    key={`${movie.id ?? movie.title}-${index}`}
+                    data-index={index}
+                    ref={(el) => {
+                      cardRefs.current[index] = el;
+                    }}
+                    className={`min-w-[240px] max-w-[260px] snap-start shrink-0 sm:min-w-[260px] ${isClickable ? "cursor-pointer" : ""}`}
+                  >
+                    <div className="group relative overflow-hidden rounded-2xl bg-white/5 shadow-lg shadow-sky-500/10">
+                      <div className="relative aspect-[2/3]">
+                        <Image
+                          src={movie.image}
+                          alt={movie.title}
+                          fill
+                          sizes="(max-width: 1024px) 50vw, 23vw"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          priority={index < cardsPerPage}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+                        <div className="absolute left-3 top-3 z-20 flex items-center gap-2">
+                          {movie.badge ? (
+                            <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-slate-950 shadow">
+                              {movie.badge}
+                            </span>
+                          ) : null}
+                          {movie.tag ? (
+                            <span className="cursor-pointer rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                              {movie.tag}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div className="flex items-center justify-between">
+                            <span className="rounded-full bg-black/70 px-2 py-1 text-xs font-semibold text-amber-300 backdrop-blur">
+                              <span className="inline-flex items-center gap-1">
+                                <StarIcon className="h-4 w-4 text-amber-400" />
+                                {movie.rating.toFixed(1)}
+                              </span>
+                            </span>
+                            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                              {dictionary.nowPlaying.details}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-lg font-bold leading-6 text-white">{movie.title}</p>
+                          <p className="text-sm text-slate-300">{movie.genre}</p>
+                        </div>
+                        {movie.id ? (
+                          <Link
+                            href={`/movies/${movie.id}`}
+                            className="absolute inset-0 z-10"
+                            aria-label={`Открыть фильм ${movie.title}`}
+                          />
+                        ) : null}
+                      </div>
                     </div>
-                    <p className="mt-3 text-lg font-bold leading-6 text-white">{movie.title}</p>
-                    <p className="text-sm text-slate-300">{movie.genre}</p>
                   </div>
-                  {movie.id ? (
-                      <Link
-                        href={`/movies/${movie.id}`}
-                        className="absolute inset-0 z-10"
-                        aria-label={`Открыть фильм ${movie.title}`}
-                      />
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-300">
+              <button
+                className="rounded-full bg-white/5 px-3 py-1 transition hover:bg-white/10 disabled:opacity-40"
+                onClick={() => scrollToPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                aria-label="Предыдущая страница"
+              >
+                ←
+              </button>
+              <span aria-live="polite">
+                {currentPage}/{totalPages}
+              </span>
+              <button
+                className="rounded-full bg-white/5 px-3 py-1 transition hover:bg-white/10 disabled:opacity-40"
+                onClick={() => scrollToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                aria-label="Следующая страница"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          <style jsx global>{`
+            .now-track-mask {
+              mask-image: linear-gradient(90deg, transparent 0, black 48px, black calc(100% - 48px), transparent 100%);
+              -webkit-mask-image: linear-gradient(90deg, transparent 0, black 48px, black calc(100% - 48px), transparent 100%);
+            }
+            [data-now-track]::-webkit-scrollbar {
+              height: 10px;
+            }
+            [data-now-track]::-webkit-scrollbar-track {
+              background: rgba(255, 255, 255, 0.04);
+              border-radius: 9999px;
+            }
+            [data-now-track]::-webkit-scrollbar-thumb {
+              background: linear-gradient(90deg, #38bdf8, #6366f1);
+              border-radius: 9999px;
+              border: 1px solid rgba(255, 255, 255, 0.35);
+            }
+            [data-now-track]::-webkit-scrollbar-thumb:hover {
+              background: linear-gradient(90deg, #22d3ee, #818cf8);
+            }
+          `}</style>
         </div>
       )}
     </section>

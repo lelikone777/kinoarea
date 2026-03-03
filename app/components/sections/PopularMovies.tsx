@@ -70,7 +70,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     const observer = new IntersectionObserver(
       (entries) => {
         let best: { index: number; ratio: number } | null = null;
-        entries.forEach((entry) => {
+        for (const entry of entries) {
           if (!entry.isIntersecting) return;
           const indexAttr = (entry.target as HTMLElement).dataset.index;
           if (indexAttr === undefined) return;
@@ -79,7 +79,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           if (!best || entry.intersectionRatio > best.ratio || (entry.intersectionRatio === best.ratio && index < best.index)) {
             best = { index, ratio: entry.intersectionRatio };
           }
-        });
+        }
         if (!best) return;
         const nextPage = Math.max(1, Math.floor(best.index / CARDS_PER_PAGE) + 1);
         setPage(nextPage);

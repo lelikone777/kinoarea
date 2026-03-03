@@ -435,7 +435,6 @@ type ImageAssetsContext = {
   posterSize: string;
   backdropSize: string;
   profileSize: string;
-  labels: TmdbLocalizedLabels;
 };
 
 function pickPosterSize(sizes: string[]) {
