@@ -113,7 +113,7 @@ export default async function Home() {
       <NewsSection articles={industryNews.length ? industryNews : newsArticles} />
       <UpcomingSection movies={upcomingDynamic} />
       <BoxOfficeSection entries={boxOfficeDynamic} language={language} />
-      <NewsletterSection posters={newsletterPosters} />
+      <NewsletterSection />
     </PageShell>
   );
 }
