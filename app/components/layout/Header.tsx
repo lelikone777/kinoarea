@@ -24,6 +24,7 @@ export function Header({ navLinks }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const scrollPositionRef = useRef(0);
 
   const closeNav = () => setIsMobileNavOpen(false);
@@ -78,6 +79,27 @@ export function Header({ navLinks }: HeaderProps) {
       body.style.overflow = "";
     };
   }, [isMobileNavOpen]);
+
+  useEffect(() => {
+    let ignore = false;
+    const run = async () => {
+      try {
+        const response = await fetch("/api/auth/session");
+        const payload = (await response.json()) as { authenticated?: boolean };
+        if (!ignore) {
+          setIsAuthenticated(Boolean(payload.authenticated));
+        }
+      } catch {
+        if (!ignore) {
+          setIsAuthenticated(false);
+        }
+      }
+    };
+    void run();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   return (
     <>
@@ -135,8 +157,11 @@ export function Header({ navLinks }: HeaderProps) {
               <CalendarIcon className="h-4 w-4 text-sky-600" />
               {dictionary.header.schedule}
             </Button>
-            <button className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40">
-              {dictionary.header.login}
+            <button
+              className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+              onClick={() => router.push(isAuthenticated ? "/profile" : "/auth/login")}
+            >
+              {isAuthenticated ? "Профиль" : dictionary.header.login}
             </button>
           </div>
         </div>
