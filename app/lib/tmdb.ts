@@ -292,7 +292,33 @@ export async function isTmdbReachable(): Promise<boolean> {
       if (!records.length) {
         return false;
       }
-      return records.some((record) => !isLoopbackAddress(record.address));
+      const hasExternalAddress = records.some((record) => !isLoopbackAddress(record.address));
+      if (!hasExternalAddress) {
+        return false;
+      }
+
+      const auth = resolveTmdbAuth();
+      const probeUrl = new URL(`${TMDB_BASE_URL}/configuration`);
+      if (auth.apiKey) {
+        probeUrl.searchParams.set("api_key", auth.apiKey);
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      try {
+        const response = await fetch(probeUrl.toString(), {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            ...auth.headers,
+          },
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        return response.ok;
+      } finally {
+        clearTimeout(timeout);
+      }
     } catch {
       return false;
     }

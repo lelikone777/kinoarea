@@ -8,6 +8,7 @@ import {
   peopleBoard,
   newsArticles,
   upcomingMovies,
+  boxOffice,
 } from "./data/content";
 import {
   getBoxOfficeMovies,
@@ -17,6 +18,7 @@ import {
   getWeeklyTrailers,
   getFeaturedTrailerHero,
   getPopularPeople,
+  isTmdbReachable,
 } from "./lib/tmdb";
 import { getIndustryNews } from "./lib/industry-news";
 import { cookies, headers } from "next/headers";
@@ -40,7 +42,7 @@ export default async function Home() {
   });
   const dictionary = getUiDictionary(language);
   const hasTmdbAuth = Boolean(process.env.TMDB_ACCESS_TOKEN || process.env.TMDB_API_KEY);
-  const canUseTmdb = hasTmdbAuth;
+  const canUseTmdb = hasTmdbAuth ? await isTmdbReachable() : false;
 
   const [
     popular,
@@ -65,7 +67,7 @@ export default async function Home() {
     getIndustryNews(language).catch(() => newsArticles),
     canUseTmdb
       ? getBoxOfficeMovies({ language, period: "weekend", sortBy: "revenue.desc", limit: 6 }).catch(() => [])
-      : Promise.resolve([]),
+      : Promise.resolve(boxOffice),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
@@ -104,7 +106,7 @@ export default async function Home() {
       />
       <NewsSection articles={industryNews.length ? industryNews : newsArticles} />
       <UpcomingSection movies={upcomingDynamic} />
-      <BoxOfficeSection entries={boxOfficeDynamic} language={language} />
+      <BoxOfficeSection entries={boxOfficeDynamic} language={language} tmdbEnabled={canUseTmdb} />
       <NewsletterSection />
     </PageShell>
   );
