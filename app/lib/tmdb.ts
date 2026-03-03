@@ -1358,6 +1358,7 @@ export async function getPopularPeople(limit = 10, page = 1, language: SiteLangu
     const delta = `+${Math.round((person.popularity ?? 0) * 10)}`;
 
     return {
+      id: person.id,
       name: person.name,
       role: person.department || labels.actorFallback,
       knownFor: knownTitle,

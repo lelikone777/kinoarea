@@ -1,7 +1,10 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ArrowRightIcon } from "../icons";
+import { LinkButton } from "../ui/Button";
 import type { Person } from "../../data/content";
 
 type PeopleSectionProps = {
@@ -27,6 +30,7 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
 
   const featured = current.slice(0, 2);
   const list = current.slice(2, 7);
+  const getActorHref = (person: Person) => (person.id ? `/actors/${person.id}` : null);
 
   return (
     <section className="mt-14 space-y-6">
@@ -44,6 +48,10 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
               {p.label}
             </button>
           ))}
+          <LinkButton href="/actors" variant="sectionListLink" ariaLabel="Все актеры">
+            Все актеры
+            <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
+          </LinkButton>
         </div>
       </div>
 
@@ -51,18 +59,22 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           {featured.map((person, idx) => (
             <div
-              key={person.name}
-              className="relative flex h-full min-h-[320px] overflow-hidden rounded-3xl border border-white/5 bg-slate-900/60 shadow-xl shadow-emerald-500/10"
+              key={person.id ?? person.name}
+              className={`group relative flex h-full min-h-[320px] overflow-hidden rounded-3xl border border-white/5 bg-slate-900/60 shadow-xl shadow-emerald-500/10 transition duration-300 ${
+                getActorHref(person)
+                  ? "cursor-pointer hover:-translate-y-1 hover:border-white/20 hover:shadow-2xl hover:shadow-emerald-400/20"
+                  : ""
+              }`}
             >
               <Image
                 src={person.image}
                 alt={person.name}
                 fill
                 sizes="(max-width: 1024px) 50vw, 40vw"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent transition-opacity duration-300 group-hover:from-slate-950 group-hover:via-slate-950/70" />
               <div className="absolute left-4 top-4 flex items-center gap-2 text-xs font-semibold">
                 <span className="rounded-full bg-emerald-400 px-3 py-1 text-slate-950 shadow">
                   {idx + 1}-е место
@@ -75,9 +87,16 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
               </div>
               <div className="absolute left-4 right-4 bottom-4 space-y-2">
                 <p className="text-xs uppercase tracking-[0.15em] text-slate-300">{person.role}</p>
-                <p className="text-xl font-bold text-white">{person.name}</p>
+                <p className="text-xl font-bold text-white transition-colors duration-300 group-hover:text-sky-100">{person.name}</p>
                 <p className="text-sm text-slate-200">{person.knownFor}</p>
               </div>
+              {getActorHref(person) ? (
+                <Link
+                  href={getActorHref(person)!}
+                  className="absolute inset-0 z-10"
+                  aria-label={`Открыть страницу актера ${person.name}`}
+                />
+              ) : null}
             </div>
           ))}
         </div>
@@ -90,14 +109,23 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
           <div className="divide-y divide-white/5">
             {list.map((person, idx) => (
               <div
-                key={person.name}
-                className="flex items-center justify-between py-3"
+                key={person.id ?? person.name}
+                className={`group relative flex items-center justify-between rounded-xl px-2 py-3 transition duration-200 ${
+                  getActorHref(person) ? "cursor-pointer hover:bg-white/5" : ""
+                }`}
               >
+                {getActorHref(person) ? (
+                  <Link
+                    href={getActorHref(person)!}
+                    className="absolute inset-0 z-10"
+                    aria-label={`Открыть страницу актера ${person.name}`}
+                  />
+                ) : null}
                 <div>
-                  <p className="text-sm font-semibold text-white">{person.name}</p>
+                  <p className="text-sm font-semibold text-white transition-colors duration-200 group-hover:text-sky-100">{person.name}</p>
                   <p className="text-xs text-slate-400">{person.role}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 transition-transform duration-200 group-hover:translate-x-0.5">
                   {person.delta ? (
                     <span className="text-xs font-semibold text-emerald-200">{person.delta}</span>
                   ) : null}

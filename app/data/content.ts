@@ -24,6 +24,7 @@ export type Trailer = {
 };
 
 export type Person = {
+  id?: number;
   name: string;
   role: string;
   image: string;
