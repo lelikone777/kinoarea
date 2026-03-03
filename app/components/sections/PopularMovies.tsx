@@ -71,11 +71,11 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
       (entries) => {
         let best: { index: number; ratio: number } | null = null;
         for (const entry of entries) {
-          if (!entry.isIntersecting) return;
+          if (!entry.isIntersecting) continue;
           const indexAttr = (entry.target as HTMLElement).dataset.index;
-          if (indexAttr === undefined) return;
+          if (indexAttr === undefined) continue;
           const index = Number(indexAttr);
-          if (Number.isNaN(index)) return;
+          if (Number.isNaN(index)) continue;
           if (!best || entry.intersectionRatio > best.ratio || (entry.intersectionRatio === best.ratio && index < best.index)) {
             best = { index, ratio: entry.intersectionRatio };
           }
@@ -103,6 +103,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
     const targetIndex = (nextPage - 1) * CARDS_PER_PAGE;
     const targetCard = cardRefs.current[targetIndex];
     if (!targetCard) return;
+    setPage(nextPage);
     targetCard.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
   };
 
@@ -215,15 +216,18 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
               →
             </button>
           </div>
-          <button className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40">
+          <Link
+            href="/movies?sortBy=popularity.desc"
+            className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+          >
             Смотреть все
             <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
-          </button>
+          </Link>
         </div>
       </div>
 
       <div
-        className="relative overflow-hidden rounded-3xl border border-white/5 bg-slate-900/60 p-4 shadow-xl shadow-indigo-500/15"
+        className="relative overflow-visible rounded-3xl bg-slate-900/60 p-4 shadow-xl shadow-indigo-500/15"
         aria-busy={isLoadingYear}
       >
         <div className="absolute left-0 top-0 h-full w-16 pointer-events-none bg-gradient-to-r from-slate-950 to-transparent" />
@@ -281,20 +285,17 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-300">
+        <div className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20 flex items-center justify-between px-0">
           <button
-            className="rounded-full bg-white/5 px-3 py-1 transition hover:bg-white/10 disabled:opacity-40"
+            className="pointer-events-auto -ml-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40"
             onClick={() => scrollByStep("prev")}
             disabled={currentPage <= 1}
             aria-label="Предыдущая страница"
           >
             ←
           </button>
-          <span aria-live="polite">
-            {currentPage}/{totalPages}
-          </span>
           <button
-            className="rounded-full bg-white/5 px-3 py-1 transition hover:bg-white/10 disabled:opacity-40"
+            className="pointer-events-auto -mr-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40"
             onClick={() => scrollByStep("next")}
             disabled={currentPage >= totalPages}
             aria-label="Следующая страница"

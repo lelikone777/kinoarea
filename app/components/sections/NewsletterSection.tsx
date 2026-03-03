@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type NewsletterPoster = {
   id?: number;
@@ -15,27 +15,56 @@ type NewsletterSectionProps = {
   posters?: NewsletterPoster[];
 };
 
-const FALLBACK_POSTERS: NewsletterPoster[] = [
-  {
-    title: "Джокер",
-    image: "https://image.tmdb.org/t/p/w300/jtrhTYB7xSrJxR1vusu99nvnZ1g.jpg",
-  },
-  {
-    title: "Джокер, альтернативный постер",
-    image: "https://image.tmdb.org/t/p/w300/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
-  },
-  {
-    title: "Ford против Ferrari",
-    image: "https://image.tmdb.org/t/p/w300/6ApDtO7xaWAfPqfi2IARXIzj8QS.jpg",
-  },
-];
-
 export function NewsletterSection({ posters }: NewsletterSectionProps) {
   const router = useRouter();
-  const posterItems = (posters?.length ? posters : FALLBACK_POSTERS).slice(0, 3);
+  const [posterItems, setPosterItems] = useState<NewsletterPoster[]>(posters?.slice(0, 3) ?? []);
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingPosters, setIsLoadingPosters] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    const controller = new AbortController();
+
+    const run = async () => {
+      setIsLoadingPosters(true);
+      try {
+        const response = await fetch("/api/popular-movies?limit=3", { signal: controller.signal });
+        if (!response.ok) {
+          return;
+        }
+        const payload = (await response.json()) as { movies?: Array<{ id?: number; title: string; image: string }> };
+        if (ignore) {
+          return;
+        }
+        const mapped = Array.isArray(payload.movies)
+          ? payload.movies
+              .filter((movie) => Boolean(movie.image))
+              .slice(0, 3)
+              .map((movie) => ({
+                id: movie.id,
+                title: movie.title,
+                image: movie.image,
+              }))
+          : [];
+        setPosterItems(mapped);
+      } catch {
+        if (ignore) return;
+      } finally {
+        if (!ignore) {
+          setIsLoadingPosters(false);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, []);
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -107,12 +136,18 @@ export function NewsletterSection({ posters }: NewsletterSectionProps) {
         <div className="relative hidden items-center justify-center lg:flex">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.15),transparent_40%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.2),transparent_35%)]" />
           <div className="relative flex gap-3 rounded-2xl bg-white/10 p-4 backdrop-blur">
-            {posterItems.map((poster, index) => (
-              <div key={`${poster.id ?? poster.title}-${index}`} className="relative h-32 w-20 overflow-hidden rounded-xl">
-                <Image src={poster.image} alt={poster.title} fill sizes="120px" className="h-full w-full object-cover" />
-                {poster.id ? <Link href={`/movies/${poster.id}`} className="absolute inset-0" aria-label={`Open ${poster.title}`} /> : null}
+            {posterItems.length ? (
+              posterItems.map((poster, index) => (
+                <div key={`${poster.id ?? poster.title}-${index}`} className="relative h-32 w-20 overflow-hidden rounded-xl">
+                  <Image src={poster.image} alt={poster.title} fill sizes="120px" className="h-full w-full object-cover" />
+                  {poster.id ? <Link href={`/movies/${poster.id}`} className="absolute inset-0" aria-label={`Open ${poster.title}`} /> : null}
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-10 text-center text-xs font-semibold text-sky-100/90">
+                {isLoadingPosters ? "Загружаем постеры..." : "Постеры недоступны"}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

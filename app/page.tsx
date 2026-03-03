@@ -75,14 +75,6 @@ export default async function Home() {
     popular.length >= 60
       ? popular.slice(0, 60)
       : [...Array(60)].map((_, i) => popular[i % popular.length]);
-  const newsletterPosters = popular
-    .filter((movie) => Boolean(movie.image))
-    .slice(0, 3)
-    .map((movie) => ({
-      id: movie.id,
-      title: movie.title,
-      image: movie.image,
-    }));
   const fallbackAvatar = "/placeholders/avatar.svg";
   const fallbackPeopleWeek = [
     ...peopleSpotlight,
