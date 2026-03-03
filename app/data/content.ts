@@ -43,6 +43,8 @@ export type News = {
   date: string;
   image: string;
   excerpt: string;
+  source?: string;
+  url?: string;
 };
 
 export type BoxOffice = {
