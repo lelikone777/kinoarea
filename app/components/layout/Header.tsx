@@ -91,7 +91,7 @@ export function Header({ navLinks }: HeaderProps) {
             >
               <MenuIcon className="h-5 w-5" />
             </button>
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex cursor-pointer items-center gap-3">
               <div className="relative h-12 w-12 overflow-hidden rounded-xl">
                 <Image src="/logo-kinoera.png" alt="Логотип КиноЭра" fill sizes="48px" className="object-cover" priority />
               </div>
@@ -157,12 +157,12 @@ export function Header({ navLinks }: HeaderProps) {
             onTouchStart={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 pt-5">
-              <div className="flex items-center gap-3">
+              <Link href="/" className="flex cursor-pointer items-center gap-3" onClick={closeNav}>
                 <div className="relative h-10 w-10 overflow-hidden rounded-xl">
                   <Image src="/logo-kinoera.png" alt="Логотип КиноЭра" fill sizes="40px" className="object-cover" priority />
                 </div>
                 <p className="text-base font-bold text-white">КиноЭра</p>
-              </div>
+              </Link>
               <button
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
                 aria-label={dictionary.header.closeMenu}
