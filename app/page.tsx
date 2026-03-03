@@ -18,6 +18,7 @@ import {
   getFeaturedTrailerHero,
   getPopularPeople,
 } from "./lib/tmdb";
+import { getIndustryNews } from "./lib/industry-news";
 import { cookies, headers } from "next/headers";
 import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
 import { getUiDictionary } from "./lib/i18n";
@@ -50,6 +51,7 @@ export default async function Home() {
     peopleWeek,
     peopleMonth,
     peopleYear,
+    industryNews,
   ] = await Promise.all([
     canUseTmdb ? getPopularMovies(60, undefined, language).catch(() => popularMovies) : Promise.resolve(popularMovies),
     canUseTmdb ? getNowPlayingMovies(undefined, language).catch(() => nowPlaying) : Promise.resolve(nowPlaying),
@@ -59,6 +61,7 @@ export default async function Home() {
     canUseTmdb ? getPopularPeople(10, 1, language).catch(() => null) : Promise.resolve(null),
     canUseTmdb ? getPopularPeople(10, 2, language).catch(() => null) : Promise.resolve(null),
     canUseTmdb ? getPopularPeople(10, 3, language).catch(() => null) : Promise.resolve(null),
+    getIndustryNews(language).catch(() => newsArticles),
   ]);
 
   const nowPlayingLimited = nowPlayingDynamic.slice(0, 9);
@@ -95,7 +98,7 @@ export default async function Home() {
         month={peopleMonth ?? fallbackPeopleWeek}
         year={peopleYear ?? fallbackPeopleWeek}
       />
-      <NewsSection articles={newsArticles} />
+      <NewsSection articles={industryNews.length ? industryNews : newsArticles} />
       <UpcomingSection movies={upcomingDynamic} />
       <BoxOfficeSection entries={boxOffice} />
       <NewsletterSection />

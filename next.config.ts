@@ -11,6 +11,22 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "variety.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.hollywoodreporter.com",
+      },
+      {
+        protocol: "https",
+        hostname: "deadline.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.deadline.com",
+      },
     ],
   },
 };

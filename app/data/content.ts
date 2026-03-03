@@ -39,10 +39,13 @@ export type PersonStat = {
 };
 
 export type News = {
+  slug: string;
   title: string;
   date: string;
   image: string;
   excerpt: string;
+  source?: string;
+  url?: string;
 };
 
 export type BoxOffice = {
@@ -58,7 +61,7 @@ export const navLinks = [
   { label: "Каталог", href: "/movies" },
   { label: "Актеры", href: "/actors" },
   { label: "Трейлеры", href: "/trailers" },
-  { label: "Новости", href: "#news" },
+  { label: "Новости", href: "/news" },
 ];
 
 export const nowFilters = [
@@ -260,6 +263,7 @@ export const peopleBoard: PersonStat[] = [
 
 export const newsArticles: News[] = [
   {
+    slug: "stunt-team-fast9",
     title: "Каскадёры объединились. Как снимали финальный трюк в «Форсаже 9»",
     date: "07 января 2025",
     excerpt:
@@ -267,6 +271,7 @@ export const newsArticles: News[] = [
     image: "/placeholders/backdrop.svg",
   },
   {
+    slug: "sochi-author-festival",
     title: "Новый фестиваль авторского кино пройдёт летом в Сочи",
     date: "05 января 2025",
     excerpt:
@@ -274,6 +279,7 @@ export const newsArticles: News[] = [
     image: "/placeholders/backdrop.svg",
   },
   {
+    slug: "critics-awards-shortlist-2025",
     title: "Премия кинокритиков: кто лидирует в шорт-листе 2025",
     date: "01 января 2025",
     excerpt:
