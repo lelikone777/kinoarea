@@ -177,9 +177,9 @@ export function Header({ navLinks }: HeaderProps) {
             <Button
               variant="cta"
               onClick={() => router.push("/schedule")}
-              className="hidden sm:flex"
+              className="hidden sm:flex bg-gradient-to-r from-amber-300 via-sky-300 to-indigo-300 text-slate-950 shadow-lg shadow-amber-300/30 ring-1 ring-white/30 hover:from-amber-200 hover:via-sky-200 hover:to-indigo-200"
             >
-              <CalendarIcon className="h-4 w-4 text-sky-600" />
+              <CalendarIcon className="h-4 w-4 text-slate-900" />
               {dictionary.header.schedule}
             </Button>
             {isAuthenticated ? (

@@ -47,6 +47,7 @@ export function ProfileSettings() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [activity, setActivity] = useState<ProfileActivity | null>(null);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
@@ -73,6 +74,10 @@ export function ProfileSettings() {
     };
     void run();
   }, [profileText.loadProfileError]);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [avatarUrl]);
 
   useEffect(() => {
     if (!user) return;
@@ -233,8 +238,15 @@ export function ProfileSettings() {
         <div className="mt-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="flex items-center gap-3 md:col-span-2">
             <div className="h-16 w-16 overflow-hidden rounded-full border border-white/15 bg-slate-900/80">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="User avatar" className="h-full w-full object-cover" />
+              {avatarUrl && !avatarLoadError ? (
+                <img
+                  src={avatarUrl}
+                  alt="User avatar"
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  onError={() => setAvatarLoadError(true)}
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
                   {profileText.avatarEmpty}
