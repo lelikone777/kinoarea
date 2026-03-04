@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getApiErrorMessage } from "@/app/lib/auth/client-error";
 
 type UserProfile = {
   id: string;
@@ -23,6 +24,8 @@ export function ProfileSettings() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +75,41 @@ export function ProfileSettings() {
       setMessage("Failed to save profile");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const uploadAvatar = async () => {
+    if (!avatarFile) {
+      setMessage("Choose an image file first");
+      return;
+    }
+
+    setMessage(null);
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", avatarFile);
+
+      const response = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setMessage(getApiErrorMessage(payload, "Failed to upload avatar"));
+        return;
+      }
+
+      const nextUser = payload.user as UserProfile;
+      setUser(nextUser);
+      setAvatarUrl(nextUser.avatarUrl ?? "");
+      setAvatarFile(null);
+      setMessage("Avatar uploaded");
+      router.refresh();
+    } catch {
+      setMessage("Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -128,6 +166,31 @@ export function ProfileSettings() {
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="text-xl font-semibold text-white">Profile settings</h2>
         <div className="mt-4 grid gap-3">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 overflow-hidden rounded-full border border-white/15 bg-slate-900/80">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="User avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">No avatar</div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
+                className="block text-xs text-slate-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-white/20"
+              />
+              <button
+                type="button"
+                onClick={uploadAvatar}
+                disabled={uploadingAvatar || !avatarFile}
+                className="rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-white transition hover:border-white/35 disabled:opacity-60"
+              >
+                {uploadingAvatar ? "Uploading..." : "Upload avatar"}
+              </button>
+            </div>
+          </div>
           <input
             type="text"
             placeholder="Nickname"

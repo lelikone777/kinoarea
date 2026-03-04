@@ -84,7 +84,14 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
 
         <section className="grid gap-6 rounded-3xl border border-white/10 bg-slate-900/60 p-5 md:grid-cols-[300px_1fr]">
           <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
-            <Image src={person.profile} alt={person.name} fill className="object-cover" />
+            <Image
+              src={person.profile}
+              alt={person.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 300px"
+              loading="eager"
+              className="object-cover"
+            />
           </div>
 
           <div className="space-y-4">

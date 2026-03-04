@@ -25,7 +25,11 @@ export function Header({ navLinks }: HeaderProps) {
   const router = useRouter();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const scrollPositionRef = useRef(0);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const closeNav = () => setIsMobileNavOpen(false);
   const openNav = () => setIsMobileNavOpen(true);
@@ -43,10 +47,23 @@ export function Header({ navLinks }: HeaderProps) {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         closeNav();
+        setIsProfileMenuOpen(false);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!profileMenuRef.current) return;
+      const target = event.target as Node;
+      if (!profileMenuRef.current.contains(target)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -85,13 +102,21 @@ export function Header({ navLinks }: HeaderProps) {
     const run = async () => {
       try {
         const response = await fetch("/api/auth/session");
-        const payload = (await response.json()) as { authenticated?: boolean };
+        const payload = (await response.json()) as {
+          authenticated?: boolean;
+          user?: { avatarUrl?: string | null; nickname?: string | null };
+        };
         if (!ignore) {
-          setIsAuthenticated(Boolean(payload.authenticated));
+          const authenticated = Boolean(payload.authenticated);
+          setIsAuthenticated(authenticated);
+          setAvatarUrl(authenticated ? (payload.user?.avatarUrl ?? null) : null);
+          setNickname(authenticated ? (payload.user?.nickname ?? null) : null);
         }
       } catch {
         if (!ignore) {
           setIsAuthenticated(false);
+          setAvatarUrl(null);
+          setNickname(null);
         }
       }
     };
@@ -157,12 +182,42 @@ export function Header({ navLinks }: HeaderProps) {
               <CalendarIcon className="h-4 w-4 text-sky-600" />
               {dictionary.header.schedule}
             </Button>
-            <button
-              className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40"
-              onClick={() => router.push(isAuthenticated ? "/profile" : "/auth/login")}
-            >
-              {isAuthenticated ? "Профиль" : dictionary.header.login}
-            </button>
+            {isAuthenticated ? (
+              <div ref={profileMenuRef} className="relative">
+                <button
+                  onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5 transition hover:border-white/35"
+                  aria-label="Открыть меню профиля"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Аватар пользователя" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-white">{nickname?.charAt(0).toUpperCase() ?? "U"}</span>
+                  )}
+                </button>
+
+                {isProfileMenuOpen ? (
+                  <div className="absolute right-0 mt-2 w-44 overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur">
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        router.push("/profile");
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                      Настройки
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <button
+                className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+                onClick={() => router.push("/auth/login")}
+              >
+                {dictionary.header.login}
+              </button>
+            )}
           </div>
         </div>
       </header>

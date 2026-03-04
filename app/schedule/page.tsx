@@ -169,7 +169,7 @@ export default function SchedulePage() {
             <section key={movie.id} className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60">
               <div className="grid gap-4 p-4 sm:grid-cols-[160px_1fr]">
                 <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                  <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
+                  <Image src={movie.poster} alt={movie.title} fill sizes="160px" className="object-cover" />
                 </div>
 
                 <div className="space-y-3">

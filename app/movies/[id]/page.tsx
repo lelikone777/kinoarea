@@ -89,7 +89,14 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
 
         <section className="grid gap-6 rounded-3xl border border-white/10 bg-slate-900/60 p-5 md:grid-cols-[320px_1fr]">
           <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
-            <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
+            <Image
+              src={movie.poster}
+              alt={movie.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 320px"
+              loading="eager"
+              className="object-cover"
+            />
           </div>
 
           <div className="space-y-4">

@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "www.deadline.com",
       },
+      {
+        protocol: "https",
+        hostname: "**.public.blob.vercel-storage.com",
+      },
     ],
   },
 };

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { cookies, headers } from "next/headers";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SiteLanguageProvider } from "./components/providers/SiteLanguageProvider";
 import { getLanguageBase, resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "./lib/language";
 import "./globals.css";
@@ -75,6 +76,7 @@ export default async function RootLayout({
           {hydrationSanitizer}
         </Script>
         <SiteLanguageProvider initialLanguage={language}>{children}</SiteLanguageProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

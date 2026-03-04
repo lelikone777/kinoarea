@@ -170,7 +170,14 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
           <section className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="relative aspect-[2/3] w-full max-w-[160px] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <Image src={data.movie.poster} alt={data.movie.title} fill className="object-cover" />
+                <Image
+                  src={data.movie.poster}
+                  alt={data.movie.title}
+                  fill
+                  sizes="160px"
+                  loading="eager"
+                  className="object-cover"
+                />
               </div>
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.14em] text-slate-400">{dictionary.booking.demoTag}</p>
@@ -306,4 +313,3 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
     </PageShell>
   );
 }
-
