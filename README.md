@@ -14,6 +14,13 @@ DIRECT_URL=postgres://...   # direct URL for Prisma migrations
 AUTH_SECRET=your_long_random_secret
 ```
 
+For Neon specifically:
+
+```bash
+DATABASE_URL=<pooled URL>        # usually host contains -pooler.
+DIRECT_URL=<unpooled URL>        # direct host, no -pooler.
+```
+
 Set at least one TMDB credential:
 
 ```bash
@@ -40,7 +47,7 @@ Open `http://localhost:3000`.
 3. Deploy normally. Build script runs:
 
 ```bash
-prisma generate && prisma migrate deploy && next build
+node scripts/validate-prisma-env.cjs && prisma generate && prisma migrate deploy && next build
 ```
 
 This ensures schema is applied in production before the app starts.

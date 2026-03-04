@@ -6,7 +6,7 @@
     "predev": "prisma generate",
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "node scripts/validate-prisma-env.cjs && prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -14,6 +14,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:validate-env": "node scripts/validate-prisma-env.cjs",
     "prisma:push": "prisma db push"
   },
   "dependencies": {
