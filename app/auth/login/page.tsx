@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { getApiErrorMessage } from "@/app/lib/auth/client-error";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function LoginPage() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error ?? "Не удалось войти");
+        setError(getApiErrorMessage(payload, "Login failed"));
         return;
       }
       router.push("/profile");
@@ -78,3 +79,4 @@ export default function LoginPage() {
     </main>
   );
 }
+

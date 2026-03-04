@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { getApiErrorMessage } from "@/app/lib/auth/client-error";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,10 +26,10 @@ export default function RegisterPage() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error ?? "Не удалось зарегистрироваться");
+        setError(getApiErrorMessage(payload, "Registration failed"));
         return;
       }
-      router.push("/profile");
+      router.push("/");
       router.refresh();
     } catch {
       setError("Не удалось зарегистрироваться");
@@ -94,3 +95,4 @@ export default function RegisterPage() {
     </main>
   );
 }
+
