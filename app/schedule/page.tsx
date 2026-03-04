@@ -176,7 +176,7 @@ export default function SchedulePage() {
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
                     <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{movie.ageRating}</span>
                     <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{movie.runtimeMin} min</span>
-                    <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{genres}</span>
+                    <span className="max-w-full break-words rounded-full bg-white/10 px-3 py-1 font-semibold text-white">{genres}</span>
                   </div>
 
                   <div>
@@ -195,12 +195,12 @@ export default function SchedulePage() {
                         <Link
                           key={s.id}
                           href={`/schedule/${s.id}`}
-                          className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-sky-300/60 hover:bg-white/10"
+                          className="group inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-sky-300/60 hover:bg-white/10"
                           aria-label={`${movie.title}, ${hint}, ${label}`}
                         >
-                          <span className="text-white">{label}</span>
-                          <span className="text-xs text-slate-300">{hint}</span>
-                          <span className="ml-1 rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs font-bold text-emerald-200">
+                          <span className="shrink-0 text-white">{label}</span>
+                          <span className="break-words text-xs text-slate-300">{hint}</span>
+                          <span className="ml-1 shrink-0 rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs font-bold text-emerald-200">
                             {dictionary.schedule.fromPrice} {min}₽
                           </span>
                         </Link>

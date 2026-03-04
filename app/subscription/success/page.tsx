@@ -17,7 +17,7 @@ export default async function SubscriptionSuccessPage({ searchParams }: Subscrip
       <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8">
         <p className="text-sm uppercase tracking-[0.2em] text-sky-300">Подписка</p>
         <h1 className="text-3xl font-extrabold text-white sm:text-4xl">Спасибо за подписку</h1>
-        <p className="text-base text-slate-200">
+        <p className="break-words text-base text-slate-200">
           {email ? `Ваш e-mail: ${email}` : "Вы успешно подписались на рассылку."}
         </p>
         <Link

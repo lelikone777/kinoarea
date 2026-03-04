@@ -9,7 +9,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-12">
+    <main className="mx-auto w-full max-w-3xl px-5 py-12">
       <ProfileSettings />
     </main>
   );

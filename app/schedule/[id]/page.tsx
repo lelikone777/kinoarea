@@ -181,11 +181,11 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
               </div>
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.14em] text-slate-400">{dictionary.booking.demoTag}</p>
-                <h1 className="text-2xl font-extrabold">{data.movie.title}</h1>
-                <p className="text-sm text-slate-300">
+                <h1 className="break-words text-2xl font-extrabold">{data.movie.title}</h1>
+                <p className="break-words text-sm text-slate-300">
                   {formatDateTime(data.screening.startsAt, language)} • {data.screening.format}
                 </p>
-                <p className="text-sm text-slate-300">
+                <p className="break-words text-sm text-slate-300">
                   {data.cinema.chain}: {data.cinema.name} • {data.cinema.address} • {data.hall.name}
                 </p>
 
@@ -204,7 +204,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
             </div>
 
             <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <div className="mx-auto max-w-3xl">
+              <div className="mx-auto w-full max-w-3xl">
                 <div className="mb-4 flex items-center justify-center">
                   <div className="w-full max-w-lg rounded-full bg-white/10 py-2 text-center text-xs font-semibold text-slate-200">
                     {dictionary.booking.screen}
@@ -278,7 +278,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               <p>
                 {dictionary.booking.seats}:{" "}
-                <span className="font-semibold text-white">
+                <span className="break-words font-semibold text-white">
                   {selectedIds.length ? selectedIds.join(", ") : dictionary.booking.notSelected}
                 </span>
               </p>

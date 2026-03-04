@@ -59,7 +59,7 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
 
   return (
     <section className="mt-14 space-y-6" id="trailers-week">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-extrabold">{dictionary.trailers.title}</h2>
         <LinkButton
           href="/trailers"

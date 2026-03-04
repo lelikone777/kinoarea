@@ -30,6 +30,21 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+}
+
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
 }
 
 a {

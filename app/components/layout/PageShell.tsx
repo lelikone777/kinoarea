@@ -10,7 +10,7 @@ type PageShellProps = {
   overlay?: ReactNode;
 };
 
-const defaultMainClassName = "relative z-10 mx-auto flex-1 max-w-6xl space-y-6 px-5 pb-24 pt-10";
+const defaultMainClassName = "relative z-10 mx-auto w-full flex-1 max-w-6xl space-y-6 px-5 pb-24 pt-10";
 
 export function PageShell({ children, mainClassName, overlay }: PageShellProps) {
   return (

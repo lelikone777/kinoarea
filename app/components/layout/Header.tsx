@@ -129,8 +129,8 @@ export function Header({ navLinks }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-white/5 bg-slate-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-100 transition hover:bg-white/10 lg:hidden"
               aria-label={dictionary.header.openMenu}
@@ -167,10 +167,10 @@ export function Header({ navLinks }: HeaderProps) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <Button variant="icon">
+            <Button variant="icon" className="hidden min-[420px]:inline-flex">
               <SearchIcon className="h-5 w-5 text-slate-200" />
             </Button>
-            <Button variant="icon">
+            <Button variant="icon" className="hidden sm:inline-flex">
               <BellIcon className="h-5 w-5 text-slate-200" />
             </Button>
             <LanguageSwitcher className="hidden sm:block" />
@@ -213,7 +213,7 @@ export function Header({ navLinks }: HeaderProps) {
               </div>
             ) : (
               <button
-                className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+                className="rounded-xl border border-white/10 px-2.5 py-2 text-xs font-semibold text-white transition hover:border-white/40 sm:px-3 sm:text-sm"
                 onClick={() => router.push("/auth/login")}
               >
                 {dictionary.header.login}

@@ -10,7 +10,7 @@ type UpcomingSectionProps = {
 export function UpcomingSection({ movies }: UpcomingSectionProps) {
   return (
     <section className="mt-14 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-extrabold">Скоро на экранах</h2>
         <span className="text-xs text-slate-400">Топ ожиданий: фильмы и сериалы</span>
       </div>

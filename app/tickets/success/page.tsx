@@ -76,7 +76,7 @@ export default async function TicketsSuccessPage({
             </span>
           </p>
           <p className="mt-2">
-            {dictionary.tickets.seats}: <span className="font-semibold text-white">{ctx.reservation.seatIds.join(", ")}</span>
+            {dictionary.tickets.seats}: <span className="break-words font-semibold text-white">{ctx.reservation.seatIds.join(", ")}</span>
           </p>
           <p className="mt-2">
             {dictionary.tickets.total}: <span className="font-extrabold text-white">{ctx.reservation.totalRub}₽</span>

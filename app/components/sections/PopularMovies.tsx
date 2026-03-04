@@ -166,12 +166,12 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
 
   return (
     <section className="mt-16 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h2 className="text-3xl font-extrabold sm:text-4xl">Популярные фильмы</h2>
           <div className="h-0.5 w-16 rounded-full bg-white/70" />
         </div>
-        <div className="flex items-center gap-3 text-xs font-semibold text-slate-400">
+        <div className="flex w-full flex-wrap items-center gap-2 text-xs font-semibold text-slate-400 lg:w-auto lg:justify-end">
           <button
             onClick={() => handleYearSelect("all")}
             className={`rounded-full px-2 py-1 transition ${
@@ -180,7 +180,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           >
             Все время
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 lg:flex-none">
             <button
               onClick={() => scrollYears("prev")}
               className="rounded-full bg-white/5 px-2 py-1 text-white transition hover:bg-white/10"
@@ -191,7 +191,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
             <div
               ref={yearsRef}
               data-year-scroll
-              className="flex max-w-[260px] flex-nowrap items-center gap-2 overflow-x-auto pr-1 scroll-smooth"
+              className="flex min-w-0 max-w-full flex-1 flex-nowrap items-center gap-2 overflow-x-auto pr-1 scroll-smooth lg:max-w-[260px]"
             >
               {years.map((year, index) => (
                 <button
@@ -218,7 +218,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
           </div>
           <Link
             href="/movies?sortBy=popularity.desc"
-            className="group flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+            className="group ml-auto flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40 lg:ml-0"
           >
             Смотреть все
             <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5" />
@@ -287,7 +287,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
 
         <div className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20 flex items-center justify-between px-0">
           <button
-            className="pointer-events-auto -ml-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40 sm:-ml-4"
             onClick={() => scrollByStep("prev")}
             disabled={currentPage <= 1}
             aria-label="Предыдущая страница"
@@ -295,7 +295,7 @@ export function PopularMovies({ movies }: PopularMoviesProps) {
             ←
           </button>
           <button
-            className="pointer-events-auto -mr-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40 sm:-mr-4"
             onClick={() => scrollByStep("next")}
             disabled={currentPage >= totalPages}
             aria-label="Следующая страница"

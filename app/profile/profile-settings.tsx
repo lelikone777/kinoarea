@@ -259,7 +259,7 @@ export function ProfileSettings() {
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
-                className="block text-xs text-slate-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-white/20"
+                className="block max-w-full text-xs text-slate-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-white/20"
               />
               <button
                 type="button"

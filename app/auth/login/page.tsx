@@ -37,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-5 py-16">
+    <main className="mx-auto w-full max-w-md px-5 py-16">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <h1 className="text-2xl font-bold text-white">Login</h1>
         <p className="mt-1 text-sm text-slate-300">Sign in to your account</p>

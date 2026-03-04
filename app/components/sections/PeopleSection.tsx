@@ -36,7 +36,7 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
     <section className="mt-14 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-3xl font-extrabold sm:text-4xl">Популярные персоны</h2>
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-400">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-400">
           {PERIODS.map((p) => (
             <button
               key={p.key}

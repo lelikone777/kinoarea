@@ -13,7 +13,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
 
   return (
     <section className="mt-14 space-y-6" id="news">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-extrabold">Новости индустрии</h2>
         <Link
           href="/news"

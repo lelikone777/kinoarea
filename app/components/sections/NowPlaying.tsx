@@ -344,7 +344,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
 
             <div className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20 flex items-center justify-between px-0">
               <button
-                className="pointer-events-auto -ml-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40"
+                className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40 sm:-ml-4"
                 onClick={() => scrollToPage(currentPage - 1)}
                 disabled={currentPage <= 1}
                 aria-label="Предыдущая страница"
@@ -352,7 +352,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
                 ←
               </button>
               <button
-                className="pointer-events-auto -mr-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40"
+                className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/95 text-lg font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:scale-105 hover:border-cyan-300 hover:bg-slate-900 disabled:opacity-40 sm:-mr-4"
                 onClick={() => scrollToPage(currentPage + 1)}
                 disabled={currentPage >= totalPages}
                 aria-label="Следующая страница"
