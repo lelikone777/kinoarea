@@ -79,6 +79,7 @@ export default function ActorsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Record<number, true>>({});
+  const [ratingMap, setRatingMap] = useState<Record<number, { average: number | null; count: number }>>({});
 
   const resetCatalogState = useCallback(() => {
     setItems([]);
@@ -236,6 +237,35 @@ export default function ActorsPage() {
     };
   }, [submittedQuery, sortBy, page, visiblePages, language, isFiltersHydrated]);
 
+  useEffect(() => {
+    if (!items.length) {
+      setRatingMap({});
+      return;
+    }
+
+    const ids = items.map((item) => item.id).join(",");
+    let isMounted = true;
+
+    const loadRatings = async () => {
+      try {
+        const response = await fetch(`/api/ratings/actors?ids=${ids}`);
+        const payload = (await response.json()) as { ratings?: Record<number, { average: number | null; count: number }> };
+        if (isMounted && payload?.ratings) {
+          setRatingMap(payload.ratings);
+        }
+      } catch {
+        if (isMounted) {
+          setRatingMap({});
+        }
+      }
+    };
+
+    void loadRatings();
+    return () => {
+      isMounted = false;
+    };
+  }, [items]);
+
   const hasFilters = Boolean(submittedQuery.trim());
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
   const leftPages = Math.max(0, page - 1);
@@ -347,7 +377,9 @@ export default function ActorsPage() {
             imageSrc={failedImages[person.id] ? "/placeholders/avatar.svg" : person.profile}
             imageAlt={person.name}
             title={person.name}
-            meta={`${person.department || dictionary.actors.actorFallback} | ${dictionary.actors.popularity} ${person.popularity.toFixed(1)}`}
+            meta={`${person.department || dictionary.actors.actorFallback} | ${dictionary.reviews.ratingLabel} ${
+              ratingMap[person.id]?.average ? ratingMap[person.id]?.average?.toFixed(1) : dictionary.reviews.ratingMissing
+            }${ratingMap[person.id]?.count ? ` (${ratingMap[person.id]?.count})` : ""}`}
             description={person.knownFor.length ? person.knownFor.join(" | ") : dictionary.actors.careerUpdating}
             onActivate={() => router.push(`/actors/${person.id}`)}
             imageProps={{

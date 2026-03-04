@@ -158,6 +158,25 @@ export type UiDictionary = {
     editorsPick: string;
     trailerSoon: string;
   };
+  reviews: {
+    title: string;
+    ratingLabel: string;
+    averageLabel: string;
+    votesLabel: string;
+    yourRating: string;
+    rateThis: string;
+    loginToRate: string;
+    commentTitle: string;
+    commentPlaceholder: string;
+    submitComment: string;
+    noComments: string;
+    like: string;
+    dislike: string;
+    delete: string;
+    loading: string;
+    loadError: string;
+    ratingMissing: string;
+  };
   profile: {
     title: string;
     emailLabel: string;
@@ -187,5 +206,16 @@ export type UiDictionary = {
     updatePasswordError: string;
     toHome: string;
     logout: string;
+    activityTitle: string;
+    ratingsTitle: string;
+    commentsTitle: string;
+    reactionsTitle: string;
+    movieLabel: string;
+    actorLabel: string;
+    noRatings: string;
+    noComments: string;
+    noReactions: string;
+    likeLabel: string;
+    dislikeLabel: string;
   };
 };

@@ -114,6 +114,7 @@ export default function MoviesPage() {
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ratingMap, setRatingMap] = useState<Record<number, { average: number | null; count: number }>>({});
   const resetCatalogState = useCallback(() => {
     setItems([]);
     setTotalPages(1);
@@ -299,6 +300,35 @@ export default function MoviesPage() {
     };
   }, [submittedQuery, year, genreId, sortBy, page, visiblePages, isFiltersHydrated, language]);
 
+  useEffect(() => {
+    if (!items.length) {
+      setRatingMap({});
+      return;
+    }
+
+    const ids = items.map((item) => item.id).join(",");
+    let isMounted = true;
+
+    const loadRatings = async () => {
+      try {
+        const response = await fetch(`/api/ratings/movies?ids=${ids}`);
+        const payload = (await response.json()) as { ratings?: Record<number, { average: number | null; count: number }> };
+        if (isMounted && payload?.ratings) {
+          setRatingMap(payload.ratings);
+        }
+      } catch {
+        if (isMounted) {
+          setRatingMap({});
+        }
+      }
+    };
+
+    void loadRatings();
+    return () => {
+      isMounted = false;
+    };
+  }, [items]);
+
   const hasFilters = Boolean(submittedQuery.trim() || year || genreId);
   const shownUntilPage = Math.min(totalPages, page + visiblePages - 1);
   const leftPages = Math.max(0, page - 1);
@@ -440,7 +470,9 @@ export default function MoviesPage() {
               imageSrc={movie.poster}
               imageAlt={movie.title}
               title={movie.title}
-              meta={`${movie.year ?? dictionary.movies.yearUnknown} | ${dictionary.movies.rating} ${movie.rating.toFixed(1)}`}
+              meta={`${movie.year ?? dictionary.movies.yearUnknown} | ${dictionary.reviews.ratingLabel} ${
+                ratingMap[movie.id]?.average ? ratingMap[movie.id]?.average?.toFixed(1) : dictionary.reviews.ratingMissing
+              }${ratingMap[movie.id]?.count ? ` (${ratingMap[movie.id]?.count})` : ""}`}
               description={movie.overview || dictionary.movies.noDescription}
               onActivate={() => router.push(`/movies/${movie.id}`)}
             />

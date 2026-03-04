@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/app/lib/auth/client-error";
 import { useUiDictionary } from "@/app/hooks/useUiDictionary";
+import { useSiteLanguage } from "@/app/hooks/useSiteLanguage";
 
 type UserProfile = {
   id: string;
@@ -13,8 +14,24 @@ type UserProfile = {
   createdAt: string;
 };
 
+type ProfileActivity = {
+  ratings: {
+    movies: { id: string; movieId: number; rating: number; createdAt: string }[];
+    actors: { id: string; actorId: number; rating: number; createdAt: string }[];
+  };
+  comments: {
+    movies: { id: string; movieId: number; body: string; createdAt: string }[];
+    actors: { id: string; actorId: number; body: string; createdAt: string }[];
+  };
+  reactions: {
+    movieComments: { id: string; movieId: number; body: string; value: "LIKE" | "DISLIKE"; createdAt: string }[];
+    actorComments: { id: string; actorId: number; body: string; value: "LIKE" | "DISLIKE"; createdAt: string }[];
+  };
+};
+
 export function ProfileSettings() {
   const router = useRouter();
+  const { language } = useSiteLanguage();
   const { dictionary } = useUiDictionary();
   const profileText = dictionary.profile;
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -30,6 +47,9 @@ export function ProfileSettings() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ProfileActivity | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -53,6 +73,38 @@ export function ProfileSettings() {
     };
     void run();
   }, [profileText.loadProfileError]);
+
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    const loadActivity = async () => {
+      setActivityLoading(true);
+      setActivityError(null);
+      try {
+        const response = await fetch("/api/profile/activity");
+        const payload = (await response.json()) as ProfileActivity & { error?: string };
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load activity");
+        }
+        if (isMounted) {
+          setActivity(payload);
+        }
+      } catch (activityLoadError) {
+        if (isMounted) {
+          setActivityError(activityLoadError instanceof Error ? activityLoadError.message : "Failed to load activity");
+        }
+      } finally {
+        if (isMounted) {
+          setActivityLoading(false);
+        }
+      }
+    };
+
+    void loadActivity();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const saveProfile = async () => {
     setMessage(null);
@@ -265,6 +317,157 @@ export function ProfileSettings() {
       </div>
 
       {message ? <p className="text-sm font-semibold text-sky-300">{message}</p> : null}
+
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+        <h2 className="text-xl font-semibold text-white">{profileText.activityTitle}</h2>
+
+        {activityLoading ? <p className="mt-3 text-sm text-slate-300">{dictionary.common.loading}</p> : null}
+        {activityError ? <p className="mt-3 text-sm text-rose-300">{activityError}</p> : null}
+
+        {!activityLoading && !activityError && activity ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-white">{profileText.ratingsTitle}</p>
+              {activity.ratings.movies.length === 0 && activity.ratings.actors.length === 0 ? (
+                <p className="text-sm text-slate-400">{profileText.noRatings}</p>
+              ) : (
+                <div className="space-y-2 text-sm text-slate-300">
+                  {activity.ratings.movies.map((entry) => (
+                    <div key={entry.id} className="flex flex-wrap items-center gap-2">
+                      <span>{profileText.movieLabel}:</span>
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/movies/${entry.movieId}`)}
+                        className="text-sky-300 hover:text-sky-200"
+                      >
+                        #{entry.movieId}
+                      </button>
+                      <span>• {entry.rating}/5</span>
+                      <span className="text-xs text-slate-500">
+                        {new Date(entry.createdAt).toLocaleDateString(language)}
+                      </span>
+                    </div>
+                  ))}
+                  {activity.ratings.actors.map((entry) => (
+                    <div key={entry.id} className="flex flex-wrap items-center gap-2">
+                      <span>{profileText.actorLabel}:</span>
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/actors/${entry.actorId}`)}
+                        className="text-sky-300 hover:text-sky-200"
+                      >
+                        #{entry.actorId}
+                      </button>
+                      <span>• {entry.rating}/5</span>
+                      <span className="text-xs text-slate-500">
+                        {new Date(entry.createdAt).toLocaleDateString(language)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-white">{profileText.commentsTitle}</p>
+              {activity.comments.movies.length === 0 && activity.comments.actors.length === 0 ? (
+                <p className="text-sm text-slate-400">{profileText.noComments}</p>
+              ) : (
+                <div className="space-y-2 text-sm text-slate-300">
+                  {activity.comments.movies.map((entry) => (
+                    <div key={entry.id} className="space-y-1 rounded-xl border border-white/10 bg-slate-950/40 p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{profileText.movieLabel}:</span>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/movies/${entry.movieId}`)}
+                          className="text-sky-300 hover:text-sky-200"
+                        >
+                          #{entry.movieId}
+                        </button>
+                        <span className="text-xs text-slate-500">
+                          {new Date(entry.createdAt).toLocaleDateString(language)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">{entry.body}</p>
+                    </div>
+                  ))}
+                  {activity.comments.actors.map((entry) => (
+                    <div key={entry.id} className="space-y-1 rounded-xl border border-white/10 bg-slate-950/40 p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{profileText.actorLabel}:</span>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/actors/${entry.actorId}`)}
+                          className="text-sky-300 hover:text-sky-200"
+                        >
+                          #{entry.actorId}
+                        </button>
+                        <span className="text-xs text-slate-500">
+                          {new Date(entry.createdAt).toLocaleDateString(language)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">{entry.body}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-white">{profileText.reactionsTitle}</p>
+              {activity.reactions.movieComments.length === 0 && activity.reactions.actorComments.length === 0 ? (
+                <p className="text-sm text-slate-400">{profileText.noReactions}</p>
+              ) : (
+                <div className="space-y-2 text-sm text-slate-300">
+                  {activity.reactions.movieComments.map((entry) => (
+                    <div key={entry.id} className="space-y-1 rounded-xl border border-white/10 bg-slate-950/40 p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{profileText.movieLabel}:</span>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/movies/${entry.movieId}`)}
+                          className="text-sky-300 hover:text-sky-200"
+                        >
+                          #{entry.movieId}
+                        </button>
+                        <span className="text-xs text-slate-500">
+                          {new Date(entry.createdAt).toLocaleDateString(language)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">{entry.body}</p>
+                      <p className="text-xs text-slate-500">
+                        {entry.value === "LIKE" ? profileText.likeLabel : profileText.dislikeLabel}
+                      </p>
+                    </div>
+                  ))}
+                  {activity.reactions.actorComments.map((entry) => (
+                    <div key={entry.id} className="space-y-1 rounded-xl border border-white/10 bg-slate-950/40 p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{profileText.actorLabel}:</span>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/actors/${entry.actorId}`)}
+                          className="text-sky-300 hover:text-sky-200"
+                        >
+                          #{entry.actorId}
+                        </button>
+                        <span className="text-xs text-slate-500">
+                          {new Date(entry.createdAt).toLocaleDateString(language)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">{entry.body}</p>
+                      <p className="text-xs text-slate-500">
+                        {entry.value === "LIKE" ? profileText.likeLabel : profileText.dislikeLabel}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <button

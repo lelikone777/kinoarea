@@ -9,14 +9,14 @@ datasource db {
 }
 
 model customers {
-  id        String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id        String @id @default(uuid()) @db.Uuid
   name      String @db.VarChar(255)
   email     String @db.VarChar(255)
   image_url String @db.VarChar(255)
 }
 
 model invoices {
-  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   customer_id String   @db.Uuid
   amount      Int
   status      String   @db.VarChar(255)
@@ -29,7 +29,7 @@ model revenue {
 }
 
 model users {
-  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id       String @id @default(uuid()) @db.Uuid
   name     String @db.VarChar(255)
   email    String @unique
   password String
@@ -43,4 +43,93 @@ model User {
   avatarUrl    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  movieRatings          MovieRating[]
+  actorRatings          ActorRating[]
+  movieComments         MovieComment[]
+  actorComments         ActorComment[]
+  movieCommentReactions MovieCommentReaction[]
+  actorCommentReactions ActorCommentReaction[]
+}
+
+enum CommentReactionValue {
+  LIKE
+  DISLIKE
+}
+
+model MovieRating {
+  id        String   @id @default(cuid())
+  userId    String
+  movieId   Int
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([movieId])
+}
+
+model ActorRating {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   Int
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, actorId])
+  @@index([actorId])
+}
+
+model MovieComment {
+  id        String   @id @default(cuid())
+  userId    String
+  movieId   Int
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions MovieCommentReaction[]
+
+  @@index([movieId])
+}
+
+model ActorComment {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   Int
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions ActorCommentReaction[]
+
+  @@index([actorId])
+}
+
+model MovieCommentReaction {
+  id        String               @id @default(cuid())
+  userId    String
+  commentId String
+  value     CommentReactionValue
+  createdAt DateTime             @default(now())
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   MovieComment         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+}
+
+model ActorCommentReaction {
+  id        String               @id @default(cuid())
+  userId    String
+  commentId String
+  value     CommentReactionValue
+  createdAt DateTime             @default(now())
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   ActorComment         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
 }

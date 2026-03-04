@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
+import { ReviewSection } from "../../components/reviews/ReviewSection";
 import { navLinks } from "../../data/content";
 import { getPersonFullDetails } from "../../lib/tmdb";
 import { getUiDictionary } from "../../lib/i18n";
 import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
+import { getActorRatingSummary, getMovieRatingMap } from "../../lib/ratings";
 
 type ActorPageProps = {
   params: Promise<{ id: string }>;
@@ -72,6 +74,14 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
 
   const filmography = person.castCredits.slice(0, 16);
   const behindTheScenes = person.crewCredits.slice(0, 12);
+  const ratingSummary = await getActorRatingSummary(personId);
+  const knownForMovieIds = person.knownFor.map((movie) => movie.id).filter((id) => typeof id === "number");
+  const knownForRatings = await getMovieRatingMap(knownForMovieIds);
+  const formatMovieRating = (id?: number | null) => {
+    if (!id) return dictionary.reviews.ratingMissing;
+    const entry = knownForRatings[id];
+    return entry?.average ? entry.average.toFixed(1) : dictionary.reviews.ratingMissing;
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
@@ -98,7 +108,10 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
             <div>
               <h1 className="text-3xl font-extrabold">{person.name}</h1>
               <p className="text-slate-300">
-                {person.department || dictionary.actorDetails.actorFallback} | {dictionary.actorDetails.popularity} {person.popularity?.toFixed(1) ?? dictionary.common.unknown}
+                {person.department || dictionary.actorDetails.actorFallback} | {dictionary.reviews.ratingLabel}{" "}
+                {ratingSummary.average ? ratingSummary.average.toFixed(1) : dictionary.reviews.ratingMissing}
+                {ratingSummary.count ? ` (${ratingSummary.count})` : ""} | {dictionary.actorDetails.popularity}{" "}
+                {person.popularity?.toFixed(1) ?? dictionary.common.unknown}
               </p>
             </div>
 
@@ -155,7 +168,7 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
                   <div className="space-y-1 p-3">
                     <p className="line-clamp-1 text-sm font-semibold">{movie.title}</p>
                     <p className="text-xs text-slate-400">
-                      {movie.year ?? dictionary.actorDetails.yearUnknown} | {dictionary.actorDetails.rating} {movie.rating.toFixed(1)}
+                      {movie.year ?? dictionary.actorDetails.yearUnknown} | {dictionary.reviews.ratingLabel} {formatMovieRating(movie.id)}
                     </p>
                   </div>
                 </Link>
@@ -213,6 +226,8 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
             </div>
           </div>
         </section>
+
+        <ReviewSection targetType="actor" targetId={personId} />
       </main>
 
       <Footer />

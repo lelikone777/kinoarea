@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
+import { ReviewSection } from "../../components/reviews/ReviewSection";
 import { navLinks } from "../../data/content";
 import { getMovieFullDetails } from "../../lib/tmdb";
 import { getUiDictionary } from "../../lib/i18n";
 import { resolveSiteLanguage, SITE_LANGUAGE_COOKIE } from "../../lib/language";
+import { getMovieRatingMap, getMovieRatingSummary } from "../../lib/ratings";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
@@ -77,6 +79,17 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
 
   const trailer = movie.trailers[0];
   const currency = language === "ru-RU" ? "RUB" : "USD";
+  const ratingSummary = await getMovieRatingSummary(movieId);
+  const relatedIds = [
+    ...movie.similar.map((item) => item.id).filter((id) => typeof id === "number"),
+    ...movie.recommendations.map((item) => item.id).filter((id) => typeof id === "number"),
+  ];
+  const relatedRatings = await getMovieRatingMap(relatedIds);
+  const formatInternalRating = (id?: number | null) => {
+    if (!id) return dictionary.reviews.ratingMissing;
+    const entry = relatedRatings[id];
+    return entry?.average ? entry.average.toFixed(1) : dictionary.reviews.ratingMissing;
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col bg-slate-950 text-slate-50">
@@ -103,7 +116,9 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
             <div>
               <h1 className="text-3xl font-extrabold">{movie.title}</h1>
               <p className="text-slate-300">
-                {movie.year ?? dictionary.common.unknown} | {formatRuntime(movie.runtime)} | TMDB {movie.voteAverage.toFixed(1)}
+                {movie.year ?? dictionary.common.unknown} | {formatRuntime(movie.runtime)} | {dictionary.reviews.ratingLabel}{" "}
+                {ratingSummary.average ? ratingSummary.average.toFixed(1) : dictionary.reviews.ratingMissing}
+                {ratingSummary.count ? ` (${ratingSummary.count})` : ""}
               </p>
             </div>
 
@@ -215,7 +230,7 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-semibold">{item.title}</p>
-                    <p className="text-[11px] text-slate-400">{item.rating.toFixed(1)}</p>
+                    <p className="text-[11px] text-slate-400">{formatInternalRating(item.id)}</p>
                   </div>
                 </Link>
               ))}
@@ -236,13 +251,15 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-semibold">{item.title}</p>
-                    <p className="text-[11px] text-slate-400">{item.rating.toFixed(1)}</p>
+                    <p className="text-[11px] text-slate-400">{formatInternalRating(item.id)}</p>
                   </div>
                 </Link>
               ))}
             </div>
           </div>
         </section>
+
+        <ReviewSection targetType="movie" targetId={movieId} />
       </main>
 
       <Footer />
