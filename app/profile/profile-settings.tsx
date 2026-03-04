@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/app/lib/auth/client-error";
+import { useUiDictionary } from "@/app/hooks/useUiDictionary";
 
 type UserProfile = {
   id: string;
@@ -14,6 +15,8 @@ type UserProfile = {
 
 export function ProfileSettings() {
   const router = useRouter();
+  const { dictionary } = useUiDictionary();
+  const profileText = dictionary.profile;
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,20 +39,20 @@ export function ProfileSettings() {
         const response = await fetch("/api/profile");
         const payload = await response.json();
         if (!response.ok) {
-          setError(payload.error ?? "Failed to load profile");
+          setError(payload.error ?? profileText.loadProfileError);
           return;
         }
         setUser(payload.user);
         setNickname(payload.user.nickname);
         setAvatarUrl(payload.user.avatarUrl ?? "");
       } catch {
-        setError("Failed to load profile");
+        setError(profileText.loadProfileError);
       } finally {
         setLoading(false);
       }
     };
     void run();
-  }, []);
+  }, [profileText.loadProfileError]);
 
   const saveProfile = async () => {
     setMessage(null);
@@ -65,14 +68,14 @@ export function ProfileSettings() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setMessage(payload.error ?? "Failed to save profile");
+        setMessage(payload.error ?? profileText.saveProfileError);
         return;
       }
       setUser(payload.user);
-      setMessage("Profile updated");
+      setMessage(profileText.profileUpdated);
       router.refresh();
     } catch {
-      setMessage("Failed to save profile");
+      setMessage(profileText.saveProfileError);
     } finally {
       setSavingProfile(false);
     }
@@ -80,7 +83,7 @@ export function ProfileSettings() {
 
   const uploadAvatar = async () => {
     if (!avatarFile) {
-      setMessage("Choose an image file first");
+      setMessage(profileText.chooseAvatar);
       return;
     }
 
@@ -96,7 +99,7 @@ export function ProfileSettings() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setMessage(getApiErrorMessage(payload, "Failed to upload avatar"));
+        setMessage(getApiErrorMessage(payload, profileText.uploadAvatarError));
         return;
       }
 
@@ -104,10 +107,10 @@ export function ProfileSettings() {
       setUser(nextUser);
       setAvatarUrl(nextUser.avatarUrl ?? "");
       setAvatarFile(null);
-      setMessage("Avatar uploaded");
+      setMessage(profileText.avatarUploaded);
       router.refresh();
     } catch {
-      setMessage("Failed to upload avatar");
+      setMessage(profileText.uploadAvatarError);
     } finally {
       setUploadingAvatar(false);
     }
@@ -128,15 +131,15 @@ export function ProfileSettings() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setMessage(payload.error ?? "Failed to update password");
+        setMessage(payload.error ?? profileText.updatePasswordError);
         return;
       }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      setMessage("Password updated");
+      setMessage(profileText.passwordUpdated);
     } catch {
-      setMessage("Failed to update password");
+      setMessage(profileText.updatePasswordError);
     } finally {
       setSavingPassword(false);
     }
@@ -149,29 +152,41 @@ export function ProfileSettings() {
   };
 
   if (loading) {
-    return <p className="text-sm text-slate-300">Loading profile...</p>;
+    return <p className="text-sm text-slate-300">{profileText.loading}</p>;
   }
 
   if (!user || error) {
-    return <p className="text-sm font-semibold text-rose-300">{error ?? "Profile unavailable"}</p>;
+    return <p className="text-sm font-semibold text-rose-300">{error ?? profileText.unavailable}</p>;
   }
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-3xl font-bold text-white">Profile</h1>
-        <p className="mt-1 text-sm text-slate-300">Email: {user.email}</p>
+      <div className="flex items-center">
+        <button
+          onClick={() => router.push("/")}
+          className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+        >
+          {profileText.toHome}
+        </button>
+      </div>
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+        <h1 className="text-3xl font-bold text-white">{profileText.title}</h1>
+        <p className="mt-1 text-sm text-slate-300">
+          {profileText.emailLabel}: {user.email}
+        </p>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <h2 className="text-xl font-semibold text-white">Profile settings</h2>
-        <div className="mt-4 grid gap-3">
-          <div className="flex items-center gap-4">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+        <h2 className="text-xl font-semibold text-white">{profileText.settingsTitle}</h2>
+        <div className="mt-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="flex items-center gap-3 md:col-span-2">
             <div className="h-16 w-16 overflow-hidden rounded-full border border-white/15 bg-slate-900/80">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="User avatar" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">No avatar</div>
+                <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
+                  {profileText.avatarEmpty}
+                </div>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -187,64 +202,64 @@ export function ProfileSettings() {
                 disabled={uploadingAvatar || !avatarFile}
                 className="rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-white transition hover:border-white/35 disabled:opacity-60"
               >
-                {uploadingAvatar ? "Uploading..." : "Upload avatar"}
+                {uploadingAvatar ? profileText.uploading : profileText.uploadAvatar}
               </button>
             </div>
           </div>
           <input
             type="text"
-            placeholder="Nickname"
+            placeholder={profileText.nicknamePlaceholder}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
+            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-400"
           />
           <input
             type="url"
-            placeholder="Avatar URL"
+            placeholder={profileText.avatarUrlPlaceholder}
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
-            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
+            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-400"
           />
           <button
             onClick={saveProfile}
             disabled={savingProfile}
-            className="rounded-xl bg-sky-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300 disabled:opacity-70"
+            className="rounded-xl bg-sky-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-sky-300 disabled:opacity-70 md:col-span-2 md:justify-self-start"
           >
-            {savingProfile ? "Saving..." : "Save profile"}
+            {savingProfile ? profileText.saving : profileText.saveProfile}
           </button>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <h2 className="text-xl font-semibold text-white">Change password</h2>
-        <div className="mt-4 grid gap-3">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+        <h2 className="text-xl font-semibold text-white">{profileText.passwordTitle}</h2>
+        <div className="mt-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <input
             type="password"
-            placeholder="Current password"
+            placeholder={profileText.currentPasswordPlaceholder}
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
+            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-400 md:col-span-2"
           />
           <input
             type="password"
-            placeholder="New password"
+            placeholder={profileText.newPasswordPlaceholder}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
+            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-400"
           />
           <input
             type="password"
-            placeholder="Repeat new password"
+            placeholder={profileText.confirmPasswordPlaceholder}
             value={confirmNewPassword}
             onChange={(e) => setConfirmNewPassword(e.target.value)}
-            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
+            className="rounded-xl border border-white/15 bg-slate-900/80 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-400"
           />
           <button
             onClick={savePassword}
             disabled={savingPassword}
-            className="rounded-xl bg-indigo-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-indigo-300 disabled:opacity-70"
+            className="rounded-xl bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-indigo-300 disabled:opacity-70 md:col-span-2 md:justify-self-start"
           >
-            {savingPassword ? "Updating..." : "Update password"}
+            {savingPassword ? profileText.updating : profileText.updatePassword}
           </button>
         </div>
       </div>
@@ -253,16 +268,10 @@ export function ProfileSettings() {
 
       <div className="flex flex-wrap gap-3">
         <button
-          onClick={() => router.push("/")}
-          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white transition hover:border-white/40"
-        >
-          На главную
-        </button>
-        <button
           onClick={logout}
           className="rounded-xl border border-rose-400/40 px-4 py-3 text-sm font-semibold text-rose-200 transition hover:border-rose-300 hover:text-rose-100"
         >
-          Выйти
+          {profileText.logout}
         </button>
       </div>
     </section>

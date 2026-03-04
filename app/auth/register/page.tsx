@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ export default function RegisterPage() {
       router.push("/");
       router.refresh();
     } catch {
-      setError("Не удалось зарегистрироваться");
+      setError("Failed to register");
     } finally {
       setIsSubmitting(false);
     }
@@ -41,12 +41,14 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto max-w-md px-5 py-16">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-2xl font-bold text-white">Регистрация</h1>
-        <p className="mt-1 text-sm text-slate-300">Создайте аккаунт</p>
+        <h1 className="text-2xl font-bold text-white">Register</h1>
+        <p className="mt-1 text-sm text-slate-300">Create your account</p>
 
         <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
           <input
             type="email"
+            name="email"
+            autoComplete="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -54,21 +56,27 @@ export default function RegisterPage() {
           />
           <input
             type="text"
-            placeholder="Никнейм"
+            name="username"
+            autoComplete="username"
+            placeholder="Nickname"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
           />
           <input
             type="password"
-            placeholder="Пароль"
+            name="new-password"
+            autoComplete="new-password"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
           />
           <input
             type="password"
-            placeholder="Повторите пароль"
+            name="confirm-new-password"
+            autoComplete="new-password"
+            placeholder="Confirm password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full rounded-xl border border-white/15 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none focus:border-sky-400"
@@ -81,18 +89,17 @@ export default function RegisterPage() {
             disabled={isSubmitting}
             className="w-full rounded-xl bg-sky-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300 disabled:opacity-70"
           >
-            {isSubmitting ? "Создаем..." : "Зарегистрироваться"}
+            {isSubmitting ? "Creating..." : "Register"}
           </button>
         </form>
 
         <p className="mt-4 text-sm text-slate-300">
-          Уже есть аккаунт?{" "}
+          Already have an account?{" "}
           <Link href="/auth/login" className="font-semibold text-sky-300 hover:text-sky-200">
-            Войти
+            Sign in
           </Link>
         </p>
       </section>
     </main>
   );
 }
-
