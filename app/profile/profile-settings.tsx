@@ -239,6 +239,7 @@ export function ProfileSettings() {
           <div className="flex items-center gap-3 md:col-span-2">
             <div className="h-16 w-16 overflow-hidden rounded-full border border-white/15 bg-slate-900/80">
               {avatarUrl && !avatarLoadError ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={avatarUrl}
                   alt="User avatar"

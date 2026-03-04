@@ -81,6 +81,10 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
     ? activeFilter
     : (filterOptions[0]?.value ?? "premieres");
   const filterTabs = filterOptions;
+  const handleFilterChange = (nextValue: string) => {
+    setActiveFilter(nextValue);
+    setPage(1);
+  };
 
   useEffect(() => {
     const applyFromUrl = () => {
@@ -161,7 +165,6 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
 
   useEffect(() => {
     cardRefs.current = [];
-    setPage(1);
     requestAnimationFrame(() => {
       cardRefs.current[0]?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
     });
@@ -191,10 +194,6 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
 
   const totalPages = Math.max(1, Math.ceil(filteredMovies.length / cardsPerPage));
   const currentPage = Math.min(page, totalPages);
-
-  useEffect(() => {
-    setPage((prev) => Math.min(prev, totalPages));
-  }, [totalPages]);
 
   useEffect(() => {
     const node = trackRef.current;
@@ -257,7 +256,7 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
       <div className="mt-4">
         <FilterWidgetTagCloud
           value={effectiveActiveFilter}
-          onChange={setActiveFilter}
+          onChange={handleFilterChange}
           options={filterTabs}
           className="px-2"
         />
@@ -298,7 +297,8 @@ export function NowPlaying({ movies, filters }: NowPlayingProps) {
                           fill
                           sizes="(max-width: 1024px) 50vw, 23vw"
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                          priority={index < cardsPerPage}
+                          priority={index === 0}
+                          fetchPriority={index === 0 ? "high" : "auto"}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
                         <div className="absolute left-3 top-3 z-20 flex items-center gap-2">

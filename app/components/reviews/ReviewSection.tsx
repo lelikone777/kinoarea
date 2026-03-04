@@ -230,6 +230,7 @@ export function ReviewSection({ targetType, targetId }: ReviewSectionProps) {
                   <div className="flex items-center gap-3">
                     <div className="h-9 w-9 overflow-hidden rounded-full border border-white/10 bg-slate-900/80">
                       {comment.user.avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={comment.user.avatarUrl}
                           alt={comment.user.nickname}

@@ -190,6 +190,7 @@ export function Header({ navLinks }: HeaderProps) {
                   aria-label="Открыть меню профиля"
                 >
                   {avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={avatarUrl} alt="Аватар пользователя" className="h-full w-full object-cover" />
                   ) : (
                     <span className="text-sm font-bold text-white">{nickname?.charAt(0).toUpperCase() ?? "U"}</span>

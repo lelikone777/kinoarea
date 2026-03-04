@@ -79,7 +79,6 @@ export function TrailersSection({ hero, trailers }: TrailersSectionProps) {
               fill
               sizes="(max-width: 1024px) 100vw, 66vw"
               className="h-full w-full object-cover"
-              priority
             />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/70 to-transparent" />
             {hero.movieId ? (

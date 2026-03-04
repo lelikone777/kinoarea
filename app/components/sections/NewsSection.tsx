@@ -39,7 +39,6 @@ export function NewsSection({ articles }: NewsSectionProps) {
                 fill
                 sizes="(max-width: 1024px) 100vw, 66vw"
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                priority
               />
               <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/70 to-transparent" />
 

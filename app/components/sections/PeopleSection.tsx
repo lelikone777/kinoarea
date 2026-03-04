@@ -72,7 +72,6 @@ export function PeopleSection({ week, month, year }: PeopleSectionProps) {
                 fill
                 sizes="(max-width: 1024px) 50vw, 40vw"
                 className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent transition-opacity duration-300 group-hover:from-slate-950 group-hover:via-slate-950/70" />
               <div className="absolute left-4 top-4 flex items-center gap-2 text-xs font-semibold">
